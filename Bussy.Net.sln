@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussy.Net", "Bussy.Net\Bussy.Net.csproj", "{E0F89313-6B94-439C-BB41-CA70141CDF3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussy.Net.Test", "Bussy.Net.Test\Bussy.Net.Test.csproj", "{FC4C81F6-2CA7-4EC1-8DF9-D3C76A5A3ED0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{E0F89313-6B94-439C-BB41-CA70141CDF3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0F89313-6B94-439C-BB41-CA70141CDF3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0F89313-6B94-439C-BB41-CA70141CDF3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC4C81F6-2CA7-4EC1-8DF9-D3C76A5A3ED0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC4C81F6-2CA7-4EC1-8DF9-D3C76A5A3ED0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC4C81F6-2CA7-4EC1-8DF9-D3C76A5A3ED0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC4C81F6-2CA7-4EC1-8DF9-D3C76A5A3ED0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
