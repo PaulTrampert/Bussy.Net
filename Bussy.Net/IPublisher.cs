@@ -22,7 +22,7 @@ public interface IPublisher
     /// <param name="messages">The list of messages to publish.</param>
     /// <typeparam name="T">The message type.</typeparam>
     /// <returns>Task that resolves when all messages have been published.</returns>
-    Task PublishAsync<T>(IEnumerable<T> messages);
+    Task PublishManyAsync<T>(IEnumerable<T> messages);
     
     /// <summary>
     /// Publish a message to a specific topic. The message will be published to the broker default defined by the message type, including <see cref="MessageAttribute"/> overrides.
@@ -40,7 +40,7 @@ public interface IPublisher
     /// <param name="topic">The topic to publish the messages on.</param>
     /// <typeparam name="T">The message type.</typeparam>
     /// <returns>Task that resolves when all messages have been published.</returns>
-    Task PublishAsync<T>(IEnumerable<T> messages, string topic);
+    Task PublishManyAsync<T>(IEnumerable<T> messages, string topic);
 
     /// <summary>
     /// Publish a message to a specific topic and broker. The message will be published to the specified broker and topic, ignoring any defaults defined by the message type.
@@ -60,5 +60,5 @@ public interface IPublisher
     /// <param name="broker">The broker to publish to.</param>
     /// <typeparam name="T">The message type.</typeparam>
     /// <returns>Task that resolves when all messages have been published.</returns>
-    Task PublishAsync<T>(IEnumerable<T> messages, string topic, string broker);
+    Task PublishManyAsync<T>(IEnumerable<T> messages, string topic, string broker);
 }
