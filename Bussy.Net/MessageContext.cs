@@ -1,5 +1,3 @@
-using System;
-
 namespace Bussy.Net;
 
 /// <summary>
@@ -14,9 +12,11 @@ namespace Bussy.Net;
 /// <typeparam name="TMessage">The message type</typeparam>
 public record MessageContext<TMessage>(
     Guid Id,
-    DateTime SendTime,
-    DateTime ReceiveTime,
+    DateTimeOffset SentAtUtc,
+    DateTimeOffset ReceivedAtUtc,
     string Topic,
     string Broker,
+    int DeliveryAttempt,
+    IReadOnlyDictionary<string, string?> Headers,
     TMessage Message
 );
