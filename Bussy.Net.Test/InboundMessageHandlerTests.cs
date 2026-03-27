@@ -1,4 +1,5 @@
 using System.Text;
+using Bussy.Net.Test.TestMessageTypes;
 using Bussy.Net.Transport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -315,7 +316,6 @@ public sealed class InboundMessageHandlerTests
 
     private sealed record LoggedEvent(LogLevel Level, string Message, Exception? Exception);
 
-    public sealed record TestMessage(string Name, int Count);
 
     private sealed class TestMessageHandler : IHandler<TestMessage>
     {

@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+using Bussy.Net.Test.TestMessageTypes;
 using Bussy.Net.Transport;
 using Moq;
 
@@ -72,7 +69,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_SingleMessage_SendsToAllTransports()
     {
-        await _subject.PublishAsync(new PlainMessage());
+        await _subject.PublishAsync(CreateMessage());
 
         _sqsMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Once);
         _rabbitMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -81,27 +78,27 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_SingleMessage_UsesClassNameAsTopic()
     {
-        await _subject.PublishAsync(new PlainMessage());
+        await _subject.PublishAsync(CreateMessage());
 
         _sqsMock.Verify(t => t.SendAsync(
-            It.Is<OutboundMessage>(m => m.Topic == nameof(PlainMessage)),
+            It.Is<OutboundMessage>(m => m.Topic == nameof(TestMessage)),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
-    public async Task PublishAsync_SingleMessage_WithAttributeTopic_UsesAttributeTopic()
+    public async Task PublishAsync_TopicOnlyMessage_UsesConfiguredTopic()
     {
-        await _subject.PublishAsync(new MessageWithTopic());
+        await _subject.PublishAsync(new TopicOnlyMessage());
 
         _sqsMock.Verify(t => t.SendAsync(
-            It.Is<OutboundMessage>(m => m.Topic == "custom-topic"),
+            It.Is<OutboundMessage>(m => m.Topic == "topic-only"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
-    public async Task PublishAsync_SingleMessage_WithAttributeBroker_SendsOnlyToMatchingTransport()
+    public async Task PublishAsync_BrokerOnlyMessage_SendsOnlyToMatchingTransport()
     {
-        await _subject.PublishAsync(new MessageWithBroker());
+        await _subject.PublishAsync(new BrokerOnlyMessage());
 
         _sqsMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Once);
         _rabbitMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -112,7 +109,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_EmptyMessageCollection_DoesNotSend()
     {
-        await _subject.PublishManyAsync(Array.Empty<PlainMessage>());
+        await _subject.PublishManyAsync(Array.Empty<TestMessage>());
 
         _sqsMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Never);
         _sqsMock.Verify(t => t.SendBatchAsync(It.IsAny<IReadOnlyCollection<OutboundMessage>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -121,7 +118,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_SingleItemCollection_CallsSendAsync()
     {
-        await _subject.PublishManyAsync(new[] { new PlainMessage() });
+        await _subject.PublishManyAsync(new[] { CreateMessage() });
 
         _sqsMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Once);
         _sqsMock.Verify(t => t.SendBatchAsync(It.IsAny<IReadOnlyCollection<OutboundMessage>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -130,7 +127,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_MultipleItemCollection_CallsSendBatchAsyncOnAllTransports()
     {
-        var messages = new[] { new PlainMessage(), new PlainMessage(), new PlainMessage() };
+        var messages = new[] { CreateMessage(), CreateMessage(), CreateMessage() };
 
         await _subject.PublishManyAsync(messages);
 
@@ -147,7 +144,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_WithTopicOverride_UsesExplicitTopic()
     {
-        await _subject.PublishAsync(new PlainMessage(), "override-topic");
+        await _subject.PublishAsync(CreateMessage(), "override-topic");
 
         _sqsMock.Verify(t => t.SendAsync(
             It.Is<OutboundMessage>(m => m.Topic == "override-topic"),
@@ -158,7 +155,7 @@ public sealed class DefaultPublisherTests
     [TestCase("   ")]
     public void PublishAsync_WithInvalidTopicOverride_ThrowsArgumentException(string invalidTopic)
     {
-        Assert.ThrowsAsync<ArgumentException>(() => _subject.PublishAsync(new PlainMessage(), invalidTopic));
+        Assert.ThrowsAsync<ArgumentException>(() => _subject.PublishAsync(CreateMessage(), invalidTopic));
     }
 
     // --- Broker override ---
@@ -166,7 +163,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_WithBrokerOverride_SendsOnlyToMatchingTransport()
     {
-        await _subject.PublishAsync(new PlainMessage(), "any-topic", "sqs");
+        await _subject.PublishAsync(CreateMessage(), "any-topic", "sqs");
 
         _sqsMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Once);
         _rabbitMock.Verify(t => t.SendAsync(It.IsAny<OutboundMessage>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -175,14 +172,14 @@ public sealed class DefaultPublisherTests
     [Test]
     public void PublishAsync_WithUnknownBroker_ThrowsArgumentException()
     {
-        Assert.ThrowsAsync<ArgumentException>(() => _subject.PublishAsync(new PlainMessage(), "any-topic", "unknown"));
+        Assert.ThrowsAsync<ArgumentException>(() => _subject.PublishAsync(CreateMessage(), "any-topic", "unknown"));
     }
 
     [TestCase("")]
     [TestCase("   ")]
     public void PublishAsync_WithInvalidBrokerOverride_ThrowsArgumentException(string invalidBroker)
     {
-        Assert.ThrowsAsync<ArgumentException>(() => _subject.PublishAsync(new PlainMessage(), "any-topic", invalidBroker));
+        Assert.ThrowsAsync<ArgumentException>(() => _subject.PublishAsync(CreateMessage(), "any-topic", invalidBroker));
     }
 
     // --- Batch variants with overrides ---
@@ -190,7 +187,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_BatchWithTopicOverride_UsesExplicitTopic()
     {
-        var messages = new[] { new PlainMessage(), new PlainMessage() };
+        var messages = new[] { CreateMessage(), CreateMessage() };
 
         await _subject.PublishManyAsync(messages, "override-topic");
 
@@ -202,7 +199,7 @@ public sealed class DefaultPublisherTests
     [Test]
     public async Task PublishAsync_BatchWithBrokerOverride_SendsOnlyToMatchingTransport()
     {
-        var messages = new[] { new PlainMessage(), new PlainMessage() };
+        var messages = new[] { CreateMessage(), CreateMessage() };
 
         await _subject.PublishManyAsync(messages, "any-topic", "sqs");
 
@@ -210,13 +207,5 @@ public sealed class DefaultPublisherTests
         _rabbitMock.Verify(t => t.SendBatchAsync(It.IsAny<IReadOnlyCollection<OutboundMessage>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // --- Test message types ---
-
-    private sealed class PlainMessage;
-
-    [MessageRoute("custom-topic")]
-    private sealed class MessageWithTopic;
-
-    [MessageRoute(Broker = "sqs")]
-    private sealed class MessageWithBroker;
+    private static TestMessage CreateMessage() => new("alice", 7);
 }
