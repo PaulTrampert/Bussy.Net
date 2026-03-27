@@ -34,7 +34,7 @@ internal class BussyService(HandlerRegistry handlerRegistry, TransportRegistry t
         {
             try
             {
-                await Task.Delay(TimeSpan.MaxValue, stoppingToken);
+                await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
             }
             catch (OperationCanceledException e)
             {
