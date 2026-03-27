@@ -19,10 +19,10 @@ internal sealed class MessageRouteResolver
         var topic = messageType.Name;
         string? broker = null;
 
-        MessageAttribute? attribute;
+        MessageRouteAttribute? attribute;
         try
         {
-            attribute = messageType.GetCustomAttribute<MessageAttribute>(inherit: false);
+            attribute = messageType.GetCustomAttribute<MessageRouteAttribute>(inherit: false);
         }
         catch (CustomAttributeFormatException ex) when (ex.InnerException is TargetInvocationException { InnerException: ArgumentException argumentException })
         {

@@ -9,7 +9,7 @@ namespace Bussy.Net;
 /// Any explicit topic or broker supplied at publish time should take precedence over this attribute.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-public sealed class MessageAttribute : Attribute
+public sealed class MessageRouteAttribute : Attribute
 {
     private string? _topic;
     private string? _broker;
@@ -17,7 +17,7 @@ public sealed class MessageAttribute : Attribute
     /// <summary>
     /// Initializes a new message attribute.
     /// </summary>
-    public MessageAttribute()
+    public MessageRouteAttribute()
     {
     }
 
@@ -25,7 +25,7 @@ public sealed class MessageAttribute : Attribute
     /// Initializes a new message attribute with a topic override.
     /// </summary>
     /// <param name="topic">Default topic for this message type.</param>
-    public MessageAttribute(string topic)
+    public MessageRouteAttribute(string topic)
     {
         Topic = topic;
     }
@@ -35,7 +35,7 @@ public sealed class MessageAttribute : Attribute
     /// </summary>
     /// <param name="topic">Default topic for this message type.</param>
     /// <param name="broker">Default broker for this message type.</param>
-    public MessageAttribute(string topic, string broker)
+    public MessageRouteAttribute(string topic, string broker)
     {
         Topic = topic;
         Broker = broker;

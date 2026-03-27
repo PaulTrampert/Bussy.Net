@@ -13,7 +13,7 @@ public interface ITransportReceiver
     /// Starts a subscription and invokes the callback for each delivered message.
     /// </summary>
     Task<ITransportSubscription> SubscribeAsync(
-        SubscriptionDefinition definition,
+        string topic,
         Func<InboundMessage, CancellationToken, Task<AckAction>> onMessage,
         CancellationToken cancellationToken = default);
 }

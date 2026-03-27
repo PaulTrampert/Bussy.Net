@@ -73,19 +73,19 @@ public sealed class MessageRouteResolverTests
 
     private sealed class NoAttributeMessage;
 
-    [Message("topic-only")]
+    [MessageRoute("topic-only")]
     private sealed class TopicOnlyMessage;
 
-    [Message(Broker = "kafka")]
+    [MessageRoute(Broker = "kafka")]
     private sealed class BrokerOnlyMessage;
 
-    [Message("orders-created", "rabbitmq")]
+    [MessageRoute("orders-created", "rabbitmq")]
     private sealed class TopicAndBrokerMessage;
 
-    [Message(" ")]
+    [MessageRoute(" ")]
     private sealed class InvalidTopicMessage;
 
-    [Message(Broker = "   ")]
+    [MessageRoute(Broker = "   ")]
     private sealed class InvalidBrokerMessage;
 }
 

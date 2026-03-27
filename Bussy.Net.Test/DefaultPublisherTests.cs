@@ -214,9 +214,9 @@ public sealed class DefaultPublisherTests
 
     private sealed class PlainMessage;
 
-    [Message("custom-topic")]
+    [MessageRoute("custom-topic")]
     private sealed class MessageWithTopic;
 
-    [Message(Broker = "sqs")]
+    [MessageRoute(Broker = "sqs")]
     private sealed class MessageWithBroker;
 }
