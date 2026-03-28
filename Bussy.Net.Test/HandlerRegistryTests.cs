@@ -155,6 +155,46 @@ public sealed class HandlerRegistryTests
         Assert.That(_subject.Handlers, Does.ContainKey(route));
     }
 
+    [Test]
+    public void RegisterHandler_TypeOverload_WithDefaultRoute_AddsHandlerToRegistry()
+    {
+        _subject.RegisterHandler(typeof(TestMessageHandler), typeof(TestMessage), null, null);
+
+        var route = new MessageRoute(Topic: nameof(TestMessage), Broker: null);
+        Assert.That(_subject.Handlers, Does.ContainKey(route));
+    }
+
+    [Test]
+    public void RegisterHandler_TypeOverload_WithNullHandlerType_ThrowsArgumentNullException()
+    {
+        var exception = Assert.Throws<ArgumentNullException>(
+            () => _subject.RegisterHandler(null!, typeof(TestMessage), null, null));
+
+        Assert.That(exception!.ParamName, Is.EqualTo("handlerType"));
+    }
+
+    [Test]
+    public void RegisterHandler_TypeOverload_WithNullMessageType_ThrowsArgumentNullException()
+    {
+        var exception = Assert.Throws<ArgumentNullException>(
+            () => _subject.RegisterHandler(typeof(TestMessageHandler), null!, null, null));
+
+        Assert.That(exception!.ParamName, Is.EqualTo("messageType"));
+    }
+
+    [Test]
+    public void RegisterHandler_TypeOverload_WithIncompatibleHandler_ThrowsArgumentException()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => _subject.RegisterHandler(typeof(TopicOnlyMessageHandler), typeof(TestMessage), null, null));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception!.ParamName, Is.EqualTo("handlerType"));
+            Assert.That(exception.Message, Does.Contain("does not implement"));
+        });
+    }
+
     // Test message handlers
     private sealed class TestMessageHandler : IHandler<TestMessage>
     {
