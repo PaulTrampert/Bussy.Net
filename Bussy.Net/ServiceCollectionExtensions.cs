@@ -1,5 +1,6 @@
 using Bussy.Net.Registries;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Bussy.Net;
 
@@ -10,6 +11,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<HandlerRegistry>();
         services.AddSingleton<TransportRegistry>();
         services.AddSingleton<MessageRouteResolver>();
+        services.AddSingleton<IHostedService, BussyService>();
         services.AddScoped<IPublisher, DefaultPublisher>();
         
         services.Configure(configure);
