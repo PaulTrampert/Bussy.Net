@@ -14,7 +14,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHostedService, BussyService>();
         services.AddScoped<IPublisher, DefaultPublisher>();
         
-        services.Configure(configure);
+        services.Configure<BussyConfigurator>(cfg =>
+        {
+            configure(cfg);
+            cfg.RegisterTransports();
+        });
+        
         return services;
     }
 }

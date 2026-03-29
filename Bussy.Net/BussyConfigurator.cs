@@ -37,7 +37,7 @@ public class BussyConfigurator
         _handlerRegistry.RegisterHandler<THandler, TMessage>(topic, broker);
     }
 
-    public void RegisterTransports()
+    internal void RegisterTransports()
     {
         var transports = _serviceProvider.GetServices<ITransport>();
         foreach (var transport in transports)
