@@ -1,4 +1,4 @@
-using System;
+using Bussy.Net.Test.TestMessageTypes;
 
 namespace Bussy.Net.Test;
 
@@ -8,19 +8,19 @@ public sealed class MessageRouteResolverTests
     private readonly MessageRouteResolver _resolver = new();
 
     [Test]
-    public void Resolve_NoAttribute_UsesSimpleClassNameAndNullBroker()
+    public void Resolve_TestMessage_UsesSimpleClassNameAndNullBroker()
     {
-        var route = _resolver.Resolve<NoAttributeMessage>();
+        var route = _resolver.Resolve<TestMessage>();
 
         Assert.Multiple(() =>
         {
-            Assert.That(route.Topic, Is.EqualTo(nameof(NoAttributeMessage)));
+            Assert.That(route.Topic, Is.EqualTo(nameof(TestMessage)));
             Assert.That(route.Broker, Is.Null);
         });
     }
 
     [Test]
-    public void Resolve_AttributeWithTopicOnly_UsesAttributeTopicAndNullBroker()
+    public void Resolve_TopicOnlyMessage_UsesConfiguredTopicAndNullBroker()
     {
         var route = _resolver.Resolve<TopicOnlyMessage>();
 
@@ -32,19 +32,19 @@ public sealed class MessageRouteResolverTests
     }
 
     [Test]
-    public void Resolve_AttributeWithNullTopicAndBroker_UsesClassNameAndAttributeBroker()
+    public void Resolve_BrokerOnlyMessage_UsesClassNameAndConfiguredBroker()
     {
         var route = _resolver.Resolve<BrokerOnlyMessage>();
 
         Assert.Multiple(() =>
         {
             Assert.That(route.Topic, Is.EqualTo(nameof(BrokerOnlyMessage)));
-            Assert.That(route.Broker, Is.EqualTo("kafka"));
+            Assert.That(route.Broker, Is.EqualTo("sqs"));
         });
     }
 
     [Test]
-    public void Resolve_AttributeWithTopicAndBroker_UsesBothAttributeValues()
+    public void Resolve_TopicAndBrokerMessage_UsesConfiguredTopicAndBroker()
     {
         var route = _resolver.Resolve<TopicAndBrokerMessage>();
 
@@ -56,7 +56,7 @@ public sealed class MessageRouteResolverTests
     }
 
     [Test]
-    public void Resolve_InvalidTopic_ThrowsArgumentException()
+    public void Resolve_InvalidTopicMessage_ThrowsArgumentException()
     {
         var exception = Assert.Throws<ArgumentException>(() => _resolver.Resolve<InvalidTopicMessage>());
 
@@ -64,29 +64,12 @@ public sealed class MessageRouteResolverTests
     }
 
     [Test]
-    public void Resolve_InvalidBroker_ThrowsArgumentException()
+    public void Resolve_InvalidBrokerMessage_ThrowsArgumentException()
     {
         var exception = Assert.Throws<ArgumentException>(() => _resolver.Resolve<InvalidBrokerMessage>());
 
         Assert.That(exception!.ParamName, Is.EqualTo("Broker"));
     }
-
-    private sealed class NoAttributeMessage;
-
-    [Message("topic-only")]
-    private sealed class TopicOnlyMessage;
-
-    [Message(Broker = "kafka")]
-    private sealed class BrokerOnlyMessage;
-
-    [Message("orders-created", "rabbitmq")]
-    private sealed class TopicAndBrokerMessage;
-
-    [Message(" ")]
-    private sealed class InvalidTopicMessage;
-
-    [Message(Broker = "   ")]
-    private sealed class InvalidBrokerMessage;
 }
 
 
