@@ -12,13 +12,16 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<TransportRegistry>();
         services.AddSingleton<MessageRouteResolver>();
         services.AddSingleton<IHostedService, BussyService>();
-        services.AddScoped<IPublisher, DefaultPublisher>();
-        
-        services.Configure<BussyConfigurator>(cfg =>
+        services.AddSingleton<BussyConfigurator>(sp =>
         {
-            configure(cfg);
-            cfg.RegisterTransports();
+            var configurator = new BussyConfigurator(
+                sp.GetRequiredService<HandlerRegistry>(),
+                sp.GetRequiredService<TransportRegistry>(),
+                sp);
+            configure(configurator);
+            return configurator;
         });
+        services.AddScoped<IPublisher, DefaultPublisher>();
         
         return services;
     }

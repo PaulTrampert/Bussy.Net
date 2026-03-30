@@ -22,7 +22,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Bussy.Net.Transports.InMemory\Bussy.Net.Transports.InMemory.csproj" />
       <ProjectReference Include="..\Bussy.Net\Bussy.Net.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Transports\" />
     </ItemGroup>
 
 </Project>

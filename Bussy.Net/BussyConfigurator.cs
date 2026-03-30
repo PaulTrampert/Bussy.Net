@@ -7,14 +7,14 @@ namespace Bussy.Net;
 
 public class BussyConfigurator
 {
-    private readonly HandlerRegistry _handlerRegistry;
-    private readonly TransportRegistry _transportRegistry;
+    internal readonly HandlerRegistry HandlerRegistry;
+    internal readonly TransportRegistry TransportRegistry;
     private readonly IServiceProvider _serviceProvider;
 
     internal BussyConfigurator(HandlerRegistry handlerRegistry, TransportRegistry transportRegistry, IServiceProvider serviceProvider)
     {
-        _handlerRegistry = handlerRegistry;
-        _transportRegistry = transportRegistry;
+        HandlerRegistry = handlerRegistry;
+        TransportRegistry = transportRegistry;
         _serviceProvider = serviceProvider;
     }
 
@@ -28,13 +28,13 @@ public class BussyConfigurator
 
         foreach (var handlerType in handlerTypes)
         {
-            _handlerRegistry.RegisterHandler(handlerType);
+            HandlerRegistry.RegisterHandler(handlerType);
         }
     }
 
     public void RegisterHandler<THandler, TMessage>(string? topic = null, string? broker = null) where THandler : IHandler<TMessage>
     {
-        _handlerRegistry.RegisterHandler<THandler, TMessage>(topic, broker);
+        HandlerRegistry.RegisterHandler<THandler, TMessage>(topic, broker);
     }
 
     internal void RegisterTransports()
@@ -42,7 +42,7 @@ public class BussyConfigurator
         var transports = _serviceProvider.GetServices<ITransport>();
         foreach (var transport in transports)
         {
-            _transportRegistry.Register(transport);
+            TransportRegistry.Register(transport);
         }
     }
 }

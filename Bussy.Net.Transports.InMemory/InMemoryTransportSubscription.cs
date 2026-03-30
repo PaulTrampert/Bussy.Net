@@ -38,6 +38,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
             try
             {
                 var message = await _messages.Reader.ReadAsync(cancellationToken);
+                message = message with {DeliveryAttempt = message.DeliveryAttempt + 1};
                 var result = await processMessage(message, cancellationToken);
                 if (result == AckAction.Retry)
                 {

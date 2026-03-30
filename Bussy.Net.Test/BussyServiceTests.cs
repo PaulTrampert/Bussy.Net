@@ -12,6 +12,7 @@ public sealed class BussyServiceTests
 {
     private HandlerRegistry _handlerRegistry = null!;
     private TransportRegistry _transportRegistry = null!;
+    private BussyConfigurator _bussyConfigurator = null!;
     private ILogger<BussyService> _logger = null!;
     private BussyService _subject = null!;
 
@@ -20,8 +21,9 @@ public sealed class BussyServiceTests
     {
         _handlerRegistry = CreateHandlerRegistry();
         _transportRegistry = new TransportRegistry();
+        _bussyConfigurator = new BussyConfigurator(_handlerRegistry, _transportRegistry, Mock.Of<IServiceProvider>());
         _logger = NullLogger<BussyService>.Instance;
-        _subject = new BussyService(_handlerRegistry, _transportRegistry, _logger);
+        _subject = new BussyService(_bussyConfigurator, _logger);
     }
 
     [TearDown]
