@@ -31,7 +31,8 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
         using var scope = _serviceProvider.CreateScope();
         try
         {
-            handler = (IHandler<T>)scope.ServiceProvider.GetRequiredService(_handlerType);
+            handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, _handlerType) as IHandler<T>
+                      ?? throw new InvalidOperationException($"Failed to create handler instance of type {_handlerType.FullName}.");
             
             var messageObj = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(message.Body.Span));
 
@@ -69,6 +70,17 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
         {
             _logger.LogError(e, "Error processing message: {@MessageContext}", messageContext);
             return AckAction.Retry;
+        }
+        finally
+        {
+            if (handler is IAsyncDisposable asyncDisposableHandler)
+            {
+                await asyncDisposableHandler.DisposeAsync();
+            }
+            else if (handler is IDisposable disposableHandler)
+            {
+                disposableHandler.Dispose();
+            }
         }
         return AckAction.Ack;
     }

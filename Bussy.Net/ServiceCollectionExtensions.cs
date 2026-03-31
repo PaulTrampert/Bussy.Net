@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
                 sp.GetRequiredService<HandlerRegistry>(),
                 sp.GetRequiredService<TransportRegistry>(),
                 sp);
+            configurator.RegisterTransports();
             configure(configurator);
             return configurator;
         });
