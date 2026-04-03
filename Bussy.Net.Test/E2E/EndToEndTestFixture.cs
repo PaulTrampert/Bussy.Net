@@ -1,12 +1,11 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Bussy.Net.Transports.InMemory;
 
 namespace Bussy.Net.Test.E2E;
 
 [TestFixture]
-public class EndToEndTestFixture
+public abstract class EndToEndTestFixture
 {
     private IHost _host = null!;
 
@@ -16,18 +15,18 @@ public class EndToEndTestFixture
     
     protected static readonly ConcurrentBag<E2ETestMessage> HandledE2ETestMessages = new();
 
+    protected virtual void StartExternalDependencies()
+    {
+    }
+
+    protected abstract void ConfigureServices(IServiceCollection services);
+
     [OneTimeSetUp]
     public async Task TestFixtureSetup()
     {
         var hostBuilder = Host.CreateDefaultBuilder();
 
-        hostBuilder.ConfigureServices(services =>
-        {
-            services.AddBussyInMemoryTransport(configure =>
-            {
-                configure.RegisterHandler<E2ETestMessageHandler, E2ETestMessage>();
-            });
-        });
+        hostBuilder.ConfigureServices(ConfigureServices);
 
         _host = hostBuilder.Build();
         await _host.StartAsync();
