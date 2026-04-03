@@ -53,6 +53,9 @@ public sealed class InboundMessageHandlerTests
                 var exception = invocation.Arguments[3] as Exception;
                 _logs.Add(new LoggedEvent(level, message, exception));
             }));
+
+        AckHandler.Reset();
+        ContextCapturingHandler.Reset();
     }
 
     [Test]
@@ -70,14 +73,23 @@ public sealed class InboundMessageHandlerTests
     }
 
     [Test]
+    public void Constructor_HandlerTypeIsNotConcrete_ThrowsArgumentException()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new InboundMessageHandler<TestMessage>(_rootServiceProviderMock.Object, typeof(IHandler<TestMessage>), _loggerMock.Object));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception!.ParamName, Is.EqualTo("handlerType"));
+            Assert.That(exception.Message, Does.Contain("must be a concrete type"));
+        });
+    }
+
+    [Test]
     public async Task HandleInboundMessageAsync_HandlerCannotBeResolved_ReturnsDeadLetter()
     {
-        var subject = CreateSubject(typeof(TestMessageHandler));
+        var subject = CreateSubject(typeof(HandlerWithRequiredDependency));
         var message = CreateInboundMessage("{\"Name\":\"alice\",\"Count\":7}");
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(TestMessageHandler)))
-            .Returns((object?)null);
 
         var result = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -87,19 +99,15 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_HandlerCannotBeResolved_LogsErrorWithExceptionAndInboundMessage()
     {
-        var subject = CreateSubject(typeof(TestMessageHandler));
+        var subject = CreateSubject(typeof(HandlerWithRequiredDependency));
         var message = CreateInboundMessage("{\"Name\":\"alice\",\"Count\":7}");
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(TestMessageHandler)))
-            .Returns((object?)null);
 
         _ = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
         var error = _logs.Single(e => e.Level == LogLevel.Error);
         Assert.Multiple(() =>
         {
-            Assert.That(error.Exception, Is.Not.Null);
+            Assert.That(error.Exception, Is.TypeOf<InvalidOperationException>());
             Assert.That(error.Message, Does.Contain("Unprocessable message"));
             Assert.That(error.Message, Does.Contain(message.Topic));
             Assert.That(error.Message, Does.Contain(message.Broker));
@@ -109,13 +117,8 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_MessageCannotBeParsed_ReturnsDeadLetter()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(AckHandler));
         var message = CreateInboundMessage("{not-json");
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
 
         var result = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -125,13 +128,8 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_MessageCannotBeParsed_LogsErrorWithExceptionAndInboundMessage()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(AckHandler));
         var message = CreateInboundMessage("{not-json");
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
 
         _ = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -148,13 +146,8 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_MessageDeserializesToNull_ReturnsDeadLetterAndLogsError()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(AckHandler));
         var message = CreateInboundMessage("null");
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
 
         var result = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -166,38 +159,21 @@ public sealed class InboundMessageHandlerTests
             Assert.That(error.Message, Does.Contain("Unprocessable message"));
             Assert.That(error.Message, Does.Contain(message.Topic));
             Assert.That(error.Message, Does.Contain(message.Broker));
+            Assert.That(AckHandler.CallCount, Is.EqualTo(0));
         });
-
-        handlerMock.Verify(
-            h => h.HandleAsync(It.IsAny<MessageContext<TestMessage>>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Test]
     public async Task HandleInboundMessageAsync_HandlerReceivesCorrectArguments()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(ContextCapturingHandler));
         var message = CreateInboundMessage("{\"Name\":\"alice\",\"Count\":7}");
         var token = new CancellationTokenSource().Token;
 
-        MessageContext<TestMessage>? capturedContext = null;
-        CancellationToken capturedToken = default;
-
-        handlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<MessageContext<TestMessage>>(), It.IsAny<CancellationToken>()))
-            .Callback<MessageContext<TestMessage>, CancellationToken>((context, cancellationToken) =>
-            {
-                capturedContext = context;
-                capturedToken = cancellationToken;
-            })
-            .Returns(Task.CompletedTask);
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
-
         _ = await subject.HandleInboundMessageAsync(message, token);
+
+        var capturedContext = ContextCapturingHandler.LastContext;
+        var capturedToken = ContextCapturingHandler.LastToken;
 
         Assert.Multiple(() =>
         {
@@ -218,18 +194,8 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_HandlerThrowsOperationCanceledException_ReturnsRetryAndLogsWarning()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(OperationCanceledHandler));
         var message = CreateInboundMessage("{\"Name\":\"alice\",\"Count\":7}");
-        var cancellationException = new OperationCanceledException("cancelled");
-
-        handlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<MessageContext<TestMessage>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(cancellationException);
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
 
         var result = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -237,7 +203,8 @@ public sealed class InboundMessageHandlerTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.EqualTo(AckAction.Retry));
-            Assert.That(warning.Exception, Is.SameAs(cancellationException));
+            Assert.That(warning.Exception, Is.TypeOf<OperationCanceledException>());
+            Assert.That(warning.Exception!.Message, Is.EqualTo("cancelled"));
             Assert.That(warning.Message, Does.Contain("Message processing cancelled"));
             Assert.That(warning.Message, Does.Contain(message.Topic));
         });
@@ -246,18 +213,8 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_HandlerThrowsException_ReturnsRetryAndLogsError()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(ThrowingHandler));
         var message = CreateInboundMessage("{\"Name\":\"alice\",\"Count\":7}");
-        var expectedException = new InvalidOperationException("boom");
-
-        handlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<MessageContext<TestMessage>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(expectedException);
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
 
         var result = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -265,7 +222,8 @@ public sealed class InboundMessageHandlerTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.EqualTo(AckAction.Retry));
-            Assert.That(error.Exception, Is.SameAs(expectedException));
+            Assert.That(error.Exception, Is.TypeOf<InvalidOperationException>());
+            Assert.That(error.Exception!.Message, Is.EqualTo("boom"));
             Assert.That(error.Message, Does.Contain("Error processing message"));
             Assert.That(error.Message, Does.Contain(message.Topic));
         });
@@ -274,17 +232,8 @@ public sealed class InboundMessageHandlerTests
     [Test]
     public async Task HandleInboundMessageAsync_HandlerCompletesWithoutError_ReturnsAck()
     {
-        var handlerMock = new Mock<IHandler<TestMessage>>();
-        var subject = CreateSubject(typeof(IHandler<TestMessage>));
+        var subject = CreateSubject(typeof(AckHandler));
         var message = CreateInboundMessage("{\"Name\":\"alice\",\"Count\":7}");
-
-        handlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<MessageContext<TestMessage>>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _scopedServiceProviderMock
-            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
-            .Returns(handlerMock.Object);
 
         var result = await subject.HandleInboundMessageAsync(message, CancellationToken.None);
 
@@ -317,10 +266,63 @@ public sealed class InboundMessageHandlerTests
     private sealed record LoggedEvent(LogLevel Level, string Message, Exception? Exception);
 
 
-    private sealed class TestMessageHandler : IHandler<TestMessage>
+    private sealed class AckHandler : IHandler<TestMessage>
+    {
+        public static int CallCount { get; private set; }
+
+        public static void Reset() => CallCount = 0;
+
+        public Task HandleAsync(MessageContext<TestMessage> context, CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ContextCapturingHandler : IHandler<TestMessage>
+    {
+        public static MessageContext<TestMessage>? LastContext { get; private set; }
+        public static CancellationToken LastToken { get; private set; }
+
+        public static void Reset()
+        {
+            LastContext = null;
+            LastToken = default;
+        }
+
+        public Task HandleAsync(MessageContext<TestMessage> context, CancellationToken cancellationToken = default)
+        {
+            LastContext = context;
+            LastToken = cancellationToken;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class OperationCanceledHandler : IHandler<TestMessage>
     {
         public Task HandleAsync(MessageContext<TestMessage> context, CancellationToken cancellationToken = default)
         {
+            throw new OperationCanceledException("cancelled");
+        }
+    }
+
+    private sealed class ThrowingHandler : IHandler<TestMessage>
+    {
+        public Task HandleAsync(MessageContext<TestMessage> context, CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("boom");
+        }
+    }
+
+    private interface IMissingDependency;
+
+    private sealed class HandlerWithRequiredDependency(IMissingDependency missingDependency) : IHandler<TestMessage>
+    {
+        private readonly IMissingDependency _missingDependency = missingDependency;
+
+        public Task HandleAsync(MessageContext<TestMessage> context, CancellationToken cancellationToken = default)
+        {
+            _ = _missingDependency;
             return Task.CompletedTask;
         }
     }

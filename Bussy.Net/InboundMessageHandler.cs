@@ -18,6 +18,12 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
         {
             throw new ArgumentException($"Handler {handlerType.FullName} does not implement {typeof(IHandler<T>).FullName}.", nameof(handlerType));
         }
+
+        if (handlerType.IsInterface || handlerType.IsAbstract)
+        {
+            throw new ArgumentException($"Handler {handlerType.FullName} must be a concrete type.", nameof(handlerType));
+        }
+
         _serviceProvider = serviceProvider;
         _handlerType = handlerType;
         _logger = logger;
