@@ -69,17 +69,6 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
             _logger.LogError(e, "Error processing message: {@MessageContext}", messageContext);
             return AckAction.Retry;
         }
-        finally
-        {
-            if (handler is IAsyncDisposable asyncDisposableHandler)
-            {
-                await asyncDisposableHandler.DisposeAsync();
-            }
-            else if (handler is IDisposable disposableHandler)
-            {
-                disposableHandler.Dispose();
-            }
-        }
         return AckAction.Ack;
     }
 }
