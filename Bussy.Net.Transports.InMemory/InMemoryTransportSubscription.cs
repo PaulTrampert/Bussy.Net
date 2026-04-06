@@ -53,9 +53,9 @@ public class InMemoryTransportSubscription : ITransportSubscription
                     _logger.LogError("Dead letter message: {@Message}", message);
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce)
             {
-
+                _logger.LogWarning(oce, "Message processing cancelled in subscription {SubscriptionName}", Name);
             }
             catch (Exception ex)
             {
@@ -66,12 +66,26 @@ public class InMemoryTransportSubscription : ITransportSubscription
     
     public void Dispose()
     {
-        _messages.Writer.Complete();
+        try
+        {
+            _messages.Writer.Complete();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Exception thrown disposing of subscription {SubscriptionName}", Name);
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
-        _messages.Writer.Complete();
-        await  _processTask;
+        try
+        {
+            _messages.Writer.Complete();
+            await _processTask;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Exception thrown disposing async of subscription {SubscriptionName}", Name);
+        }
     }
 }
