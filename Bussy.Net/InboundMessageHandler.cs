@@ -37,8 +37,7 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
                 throw new MessageNullException();
             }
 
-            handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, _handlerType) as IHandler<T>
-                      ?? throw new InvalidOperationException($"Failed to create handler instance of type {_handlerType.FullName}.");
+            handler = (IHandler<T>)scope.ServiceProvider.GetRequiredService(_handlerType);
 
             messageContext = new MessageContext<T>(
                 message.MessageId,

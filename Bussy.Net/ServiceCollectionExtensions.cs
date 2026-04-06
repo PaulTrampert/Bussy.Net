@@ -1,3 +1,4 @@
+using System.Reflection;
 using Bussy.Net.Registries;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,22 @@ public static class ServiceCollectionExtensions
             return configurator;
         });
         services.AddScoped<IPublisher, DefaultPublisher>();
+        
+        return services;
+    }
+
+    public static IServiceCollection AddBussyHandlers(this IServiceCollection services, params Assembly[] assemblies)
+    {
+        assemblies = assemblies.Length > 0 ? assemblies : AppDomain.CurrentDomain.GetAssemblies();
+        var handlerTypes = assemblies.SelectMany(
+            assembly => assembly.GetTypes()
+                .Where(type => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
+        );
+
+        foreach (var handlerType in handlerTypes)
+        {
+            services.AddScoped(handlerType);
+        }
         
         return services;
     }

@@ -26,7 +26,11 @@ public abstract class EndToEndTestFixture
     {
         var hostBuilder = Host.CreateDefaultBuilder();
 
-        hostBuilder.ConfigureServices(ConfigureServices);
+        hostBuilder.ConfigureServices(sc =>
+        {
+            ConfigureServices(sc);
+            sc.AddScoped<E2ETestMessageHandler>();
+        });
 
         _host = hostBuilder.Build();
         await _host.StartAsync();
