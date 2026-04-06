@@ -1,4 +1,5 @@
 using System.Reflection;
+using Bussy.Net.Helpers;
 using Bussy.Net.Registries;
 using Bussy.Net.Transport;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,7 @@ public class BussyConfigurator
     {
         assemblies = assemblies.Length > 0 ? assemblies : AppDomain.CurrentDomain.GetAssemblies();
         var handlerTypes = assemblies.SelectMany(
-            assembly => assembly.GetTypes()
+            assembly => assembly.GetLoadableTypes()
                 .Where(type => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
         );
 

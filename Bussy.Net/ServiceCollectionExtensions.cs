@@ -1,4 +1,5 @@
 using System.Reflection;
+using Bussy.Net.Helpers;
 using Bussy.Net.Registries;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,23 +29,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
-    {
-        try
-        {
-            return assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            return ex.Types.Where(type => type != null).Cast<Type>();
-        }
-    }
-
     public static IServiceCollection AddBussyHandlers(this IServiceCollection services, params Assembly[] assemblies)
     {
         assemblies = assemblies.Length > 0 ? assemblies : AppDomain.CurrentDomain.GetAssemblies();
         var handlerTypes = assemblies.SelectMany(
-            assembly => GetLoadableTypes(assembly)
+            assembly => assembly.GetLoadableTypes()
                 .Where(type => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
         );
 
