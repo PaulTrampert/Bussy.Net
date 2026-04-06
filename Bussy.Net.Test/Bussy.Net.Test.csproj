@@ -28,8 +28,4 @@
       <ProjectReference Include="..\Bussy.Net\Bussy.Net.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Transports\" />
-    </ItemGroup>
-
 </Project>
