@@ -33,34 +33,39 @@ public class InMemoryTransportSubscription : ITransportSubscription
     
     private async Task ProcessAsync(Func<InboundMessage, CancellationToken, Task<AckAction>> processMessage, CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested && await _messages.Reader.WaitToReadAsync(cancellationToken))
+        try
         {
-            try
+            while (!cancellationToken.IsCancellationRequested && await _messages.Reader.WaitToReadAsync(cancellationToken))
             {
-                if (!_messages.Reader.TryRead(out var message))
+                try
                 {
-                    continue;
-                }
-                message = message with {DeliveryAttempt = message.DeliveryAttempt + 1};
-                var result = await processMessage(message, cancellationToken);
-                if (result == AckAction.Retry)
-                {
-                    await _messages.Writer.WriteAsync(message, cancellationToken);
-                }
+                    if (!_messages.Reader.TryRead(out var message))
+                    {
+                        continue;
+                    }
+                    message = message with {DeliveryAttempt = message.DeliveryAttempt + 1};
+                    var result = await processMessage(message, cancellationToken);
+                    if (result == AckAction.Retry)
+                    {
+                        await _messages.Writer.WriteAsync(message, cancellationToken);
+                    }
 
-                if (result == AckAction.DeadLetter)
+                    if (result == AckAction.DeadLetter)
+                    {
+                        _logger.LogError("Dead letter message: {@Message}", message);
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogError("Dead letter message: {@Message}", message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing message in subscription {SubscriptionName}", Name);
                 }
             }
-            catch (OperationCanceledException oce)
-            {
-                _logger.LogWarning(oce, "Message processing cancelled in subscription {SubscriptionName}", Name);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing message in subscription {SubscriptionName}", Name);
-            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
     }
     
