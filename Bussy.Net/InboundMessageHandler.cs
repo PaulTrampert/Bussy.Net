@@ -31,14 +31,13 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
         using var scope = _serviceProvider.CreateScope();
         try
         {
-            handler = (IHandler<T>)scope.ServiceProvider.GetRequiredService(_handlerType);
-            
             var messageObj = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(message.Body.Span));
-
             if (messageObj == null)
             {
                 throw new MessageNullException();
             }
+
+            handler = (IHandler<T>)scope.ServiceProvider.GetRequiredService(_handlerType);
 
             messageContext = new MessageContext<T>(
                 message.MessageId,

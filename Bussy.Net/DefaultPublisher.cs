@@ -165,7 +165,7 @@ internal sealed class DefaultPublisher : IPublisher
 
     private static IReadOnlyDictionary<string, ITransport> BuildTransportLookup(IEnumerable<ITransport> transports)
     {
-        var lookup = new Dictionary<string, ITransport>(StringComparer.OrdinalIgnoreCase);
+        var lookup = new Dictionary<string, ITransport>();
         foreach (var transport in transports)
         {
             if (string.IsNullOrWhiteSpace(transport.Name))

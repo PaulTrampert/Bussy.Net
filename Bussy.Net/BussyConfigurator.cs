@@ -1,4 +1,5 @@
 using System.Reflection;
+using Bussy.Net.Helpers;
 using Bussy.Net.Registries;
 using Bussy.Net.Transport;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,14 +8,14 @@ namespace Bussy.Net;
 
 public class BussyConfigurator
 {
-    private readonly HandlerRegistry _handlerRegistry;
-    private readonly TransportRegistry _transportRegistry;
+    internal readonly HandlerRegistry HandlerRegistry;
+    internal readonly TransportRegistry TransportRegistry;
     private readonly IServiceProvider _serviceProvider;
 
     internal BussyConfigurator(HandlerRegistry handlerRegistry, TransportRegistry transportRegistry, IServiceProvider serviceProvider)
     {
-        _handlerRegistry = handlerRegistry;
-        _transportRegistry = transportRegistry;
+        HandlerRegistry = handlerRegistry;
+        TransportRegistry = transportRegistry;
         _serviceProvider = serviceProvider;
     }
 
@@ -22,19 +23,19 @@ public class BussyConfigurator
     {
         assemblies = assemblies.Length > 0 ? assemblies : AppDomain.CurrentDomain.GetAssemblies();
         var handlerTypes = assemblies.SelectMany(
-            assembly => assembly.GetTypes()
+            assembly => assembly.GetLoadableTypes()
                 .Where(type => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
         );
 
         foreach (var handlerType in handlerTypes)
         {
-            _handlerRegistry.RegisterHandler(handlerType);
+            HandlerRegistry.RegisterHandler(handlerType);
         }
     }
 
     public void RegisterHandler<THandler, TMessage>(string? topic = null, string? broker = null) where THandler : IHandler<TMessage>
     {
-        _handlerRegistry.RegisterHandler<THandler, TMessage>(topic, broker);
+        HandlerRegistry.RegisterHandler<THandler, TMessage>(topic, broker);
     }
 
     internal void RegisterTransports()
@@ -42,7 +43,7 @@ public class BussyConfigurator
         var transports = _serviceProvider.GetServices<ITransport>();
         foreach (var transport in transports)
         {
-            _transportRegistry.Register(transport);
+            TransportRegistry.Register(transport);
         }
     }
 }
