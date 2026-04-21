@@ -19,11 +19,18 @@ public abstract class EndToEndTestFixture
     {
     }
 
+    protected virtual Task StopExternalDependenciesAsync()
+    {
+        return Task.CompletedTask;
+    }
+
     protected abstract void ConfigureServices(IServiceCollection services);
 
     [OneTimeSetUp]
     public async Task TestFixtureSetup()
     {
+        StartExternalDependencies();
+
         var hostBuilder = Host.CreateDefaultBuilder();
 
         hostBuilder.ConfigureServices(sc =>
@@ -63,6 +70,8 @@ public abstract class EndToEndTestFixture
         {
             _host.Dispose();
         }
+
+        await StopExternalDependenciesAsync();
     }
 
     [Test]
