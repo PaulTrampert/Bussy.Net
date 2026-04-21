@@ -163,7 +163,7 @@ public sealed class InMemoryTransportSubscriptionTests
     private static OutboundMessage CreateOutboundMessage(string topic)
     {
         return new OutboundMessage(
-            Encoding.UTF8.GetBytes("{\"id\":1}"),
+            "{\"id\":1}"u8.ToArray(),
             topic,
             "InMemory",
             new Dictionary<string, string?>(),
