@@ -25,7 +25,7 @@ internal class BussyService(BussyConfigurator bussyConfigurator, ILogger<BussySe
             {
                 var subscription = await transport.SubscribeAsync(
                     route.Topic,
-                    handler.HandleInboundMessageAsync,
+                    handler,
                     stoppingToken);
 
                 _subscriptions.Add(subscription);

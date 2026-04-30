@@ -142,9 +142,9 @@ public sealed class BussyServiceTests
         transport
             .Setup(t => t.SubscribeAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<InboundMessage, CancellationToken, Task<AckAction>>>(),
+                It.IsAny<IInboundMessageHandler>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, Func<InboundMessage, CancellationToken, Task<AckAction>>, CancellationToken>((topic, _, token) =>
+            .Callback<string, IInboundMessageHandler, CancellationToken>((topic, _, token) =>
             {
                 topics?.Add(topic);
                 onToken?.Invoke(token);
@@ -184,7 +184,4 @@ public sealed class BussyServiceTests
         }
     }
 }
-
-
-
 

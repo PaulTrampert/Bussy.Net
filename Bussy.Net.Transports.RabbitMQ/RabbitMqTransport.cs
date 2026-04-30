@@ -20,11 +20,10 @@ public sealed class RabbitMqTransport(RabbitMqTransportOptions options) : ITrans
         throw new NotImplementedException("RabbitMQ batch send is not implemented yet.");
     }
 
-    public Task<ITransportSubscription> SubscribeAsync(string topic, Func<InboundMessage, CancellationToken, Task<AckAction>> onMessage,
+    public Task<ITransportSubscription> SubscribeAsync(string topic, IInboundMessageHandler handler,
         CancellationToken cancellationToken = default)
     {
         ITransportSubscription subscription = new RabbitMqTransportSubscription($"{Name}_{topic}");
         return Task.FromResult(subscription);
     }
 }
-

@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,11 +9,10 @@ namespace Bussy.Net.Transport;
 public interface ITransportReceiver
 {
     /// <summary>
-    /// Starts a subscription and invokes the callback for each delivered message.
+    /// Starts a subscription and invokes the message handler for each delivered message.
     /// </summary>
     Task<ITransportSubscription> SubscribeAsync(
         string topic,
-        Func<InboundMessage, CancellationToken, Task<AckAction>> onMessage,
+        IInboundMessageHandler handler,
         CancellationToken cancellationToken = default);
 }
-

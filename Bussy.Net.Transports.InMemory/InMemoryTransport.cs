@@ -39,9 +39,9 @@ public class InMemoryTransport(ILoggerFactory loggerFactory) : ITransport
         await Task.WhenAll(messages.Select(m => SendAsync(m, cancellationToken)));
     }
     
-    public Task<ITransportSubscription> SubscribeAsync(string topic, Func<InboundMessage, CancellationToken, Task<AckAction>> onMessage, CancellationToken cancellationToken = default)
+    public Task<ITransportSubscription> SubscribeAsync(string topic, IInboundMessageHandler handler, CancellationToken cancellationToken = default)
     {
-        var subscription = new InMemoryTransportSubscription($"{Name}_{topic}", onMessage, loggerFactory.CreateLogger<InMemoryTransportSubscription>(), cancellationToken);
+        var subscription = new InMemoryTransportSubscription($"{Name}_{topic}", handler, loggerFactory.CreateLogger<InMemoryTransportSubscription>(), cancellationToken);
         _subscriptions.AddOrUpdate(topic, _ => [subscription], (_, old) => old.Append(subscription));
         return Task.FromResult<ITransportSubscription>(subscription);
     }
