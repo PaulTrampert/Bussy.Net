@@ -11,6 +11,8 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
     private readonly IServiceProvider _serviceProvider;
     private readonly Type _handlerType;
     private readonly ILogger<InboundMessageHandler<T>> _logger;
+    
+    public string Name => _handlerType.Name;
 
     public InboundMessageHandler(IServiceProvider serviceProvider, Type handlerType, ILogger<InboundMessageHandler<T>> logger)
     {
@@ -77,5 +79,7 @@ public class MessageNullException() : Exception("Message deserialized as null");
 
 public interface IInboundMessageHandler
 {
+    public string Name { get; }
+    
     Task<AckAction> HandleInboundMessageAsync(InboundMessage message, CancellationToken token);
 }

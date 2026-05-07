@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
 
         services.AddBussy(configure);
         services.AddSingleton(options);
+        services.AddSingleton<IRabbitMqMessageMapper, RabbitMqMessageMapper>();
         services.AddSingleton<ITransport, RabbitMqTransport>();
 
         return services;

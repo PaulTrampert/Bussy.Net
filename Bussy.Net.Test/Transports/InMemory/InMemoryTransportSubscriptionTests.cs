@@ -214,6 +214,8 @@ public sealed class InMemoryTransportSubscriptionTests
     private sealed class DelegateInboundMessageHandler(
         Func<InboundMessage, CancellationToken, Task<AckAction>> callback) : IInboundMessageHandler
     {
+        public string Name => nameof(DelegateInboundMessageHandler);
+        
         public Task<AckAction> HandleInboundMessageAsync(InboundMessage message, CancellationToken token)
         {
             return callback(message, token);
