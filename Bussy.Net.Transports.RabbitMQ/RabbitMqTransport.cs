@@ -9,10 +9,7 @@ public sealed class RabbitMqTransport(
     IChannel rabbitmqChannel,
     IRabbitMqMessageMapper messageMapper) : ITransport
 {
-    private readonly RabbitMqTransportOptions _options = options;
-    private readonly IRabbitMqMessageMapper _messageMapper = messageMapper;
-
-    public string Name => _options.TransportName;
+    public string Name => options.TransportName;
 
     public TransportCapability Capabilities => TransportCapability.None;
 
@@ -27,7 +24,7 @@ public sealed class RabbitMqTransport(
             autoDelete: false,
             cancellationToken: cancellationToken);
 
-        var properties = _messageMapper.MapOutbound(message);
+        var properties = messageMapper.MapOutbound(message);
 
         await rabbitmqChannel.BasicPublishAsync(
             exchange: message.Topic,
@@ -81,7 +78,7 @@ public sealed class RabbitMqTransport(
         var consumer = new AsyncEventingBasicConsumer(rabbitmqChannel);
         consumer.ReceivedAsync += async (_, eventArgs) =>
         {
-            var inbound = _messageMapper.MapInbound(eventArgs, Name);
+            var inbound = messageMapper.MapInbound(eventArgs, Name);
             AckAction action;
             try
             {
