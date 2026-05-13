@@ -5,13 +5,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Bussy.Net.Transports.InMemory;
 
+/// <summary>
+/// In-memory <see cref="ITransport"/> implementation that routes messages directly between producers and
+/// consumers within the same process. Intended for testing and lightweight single-process scenarios.
+/// </summary>
 public class InMemoryTransport(ILoggerFactory loggerFactory) : ITransport
 {
     private readonly ConcurrentDictionary<string, IEnumerable<InMemoryTransportSubscription>> _subscriptions = new();
-    
+
+    /// <inheritdoc/>
     public string Name => "InMemory";
+
+    /// <inheritdoc/>
     public TransportCapability Capabilities => TransportCapability.None;
 
+    /// <inheritdoc/>
     public async Task SendAsync(OutboundMessage message, CancellationToken cancellationToken = default)
     {
         if (!_subscriptions.TryGetValue(message.Topic, out var subscriptions))
@@ -34,11 +42,13 @@ public class InMemoryTransport(ILoggerFactory loggerFactory) : ITransport
         }));
     }
 
+    /// <inheritdoc/>
     public async Task SendBatchAsync(IReadOnlyCollection<OutboundMessage> messages, CancellationToken cancellationToken = default)
     {
         await Task.WhenAll(messages.Select(m => SendAsync(m, cancellationToken)));
     }
-    
+
+    /// <inheritdoc/>
     public Task<ITransportSubscription> SubscribeAsync(string topic, IInboundMessageHandler handler, CancellationToken cancellationToken = default)
     {
         var subscription = new InMemoryTransportSubscription($"{Name}_{topic}", handler, loggerFactory.CreateLogger<InMemoryTransportSubscription>(), cancellationToken);

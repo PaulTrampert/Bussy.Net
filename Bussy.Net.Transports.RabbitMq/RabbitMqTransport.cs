@@ -7,6 +7,10 @@ using RabbitMQ.Client.Events;
 
 namespace Bussy.Net.Transports.RabbitMq;
 
+/// <summary>
+/// RabbitMQ <see cref="ITransport"/> implementation. Uses a single shared publisher channel for sending
+/// and creates a dedicated channel per subscription for receiving.
+/// </summary>
 public sealed class RabbitMqTransport(
     RabbitMqTransportOptions options,
     IConnection connection,
@@ -20,10 +24,13 @@ public sealed class RabbitMqTransport(
     private IChannel? _publisherChannel;
     private int _disposed;
 
+    /// <inheritdoc/>
     public string Name => options.TransportName;
 
+    /// <inheritdoc/>
     public TransportCapability Capabilities => TransportCapability.None;
 
+    /// <inheritdoc/>
     public async Task SendAsync(OutboundMessage message, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -69,6 +76,7 @@ public sealed class RabbitMqTransport(
         }
     }
 
+    /// <inheritdoc/>
     public async Task SendBatchAsync(IReadOnlyCollection<OutboundMessage> messages, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(messages);
@@ -76,6 +84,7 @@ public sealed class RabbitMqTransport(
         await Task.WhenAll(messages.Select(message => SendAsync(message, cancellationToken)));
     }
 
+    /// <inheritdoc/>
     public Task<ITransportSubscription> SubscribeAsync(string topic, IInboundMessageHandler handler,
         CancellationToken cancellationToken = default)
     {
@@ -180,6 +189,7 @@ public sealed class RabbitMqTransport(
             subscriptionCancellation);
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)

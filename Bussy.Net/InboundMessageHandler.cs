@@ -6,14 +6,29 @@ using Microsoft.Extensions.Logging;
 
 namespace Bussy.Net;
 
+/// <summary>
+/// Default implementation of <see cref="IInboundMessageHandler"/> that deserializes incoming messages
+/// and dispatches them to a scoped <see cref="IHandler{T}"/> instance.
+/// </summary>
+/// <typeparam name="T">The message type handled by this adapter.</typeparam>
 public class InboundMessageHandler<T> : IInboundMessageHandler
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly Type _handlerType;
     private readonly ILogger<InboundMessageHandler<T>> _logger;
-    
+
+    /// <inheritdoc/>
     public string Name => _handlerType.Name;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="InboundMessageHandler{T}"/>.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider used to resolve a scoped handler instance per message.</param>
+    /// <param name="handlerType">The concrete type that implements <see cref="IHandler{T}"/>.</param>
+    /// <param name="logger">Logger instance for this adapter.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="handlerType"/> does not implement <see cref="IHandler{T}"/>.
+    /// </exception>
     public InboundMessageHandler(IServiceProvider serviceProvider, Type handlerType, ILogger<InboundMessageHandler<T>> logger)
     {
         if (!typeof(IHandler<T>).IsAssignableFrom(handlerType))
@@ -26,6 +41,7 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
     }
 
 
+    /// <inheritdoc/>
     public async Task<AckAction> HandleInboundMessageAsync(InboundMessage message, CancellationToken token)
     {
         IHandler<T> handler;
@@ -75,11 +91,30 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
     }
 }
 
+/// <summary>
+/// Exception thrown when a message deserializes to <see langword="null"/>.
+/// </summary>
 public class MessageNullException() : Exception("Message deserialized as null");
 
+/// <summary>
+/// Internal contract between the transport layer and the message-dispatch pipeline.
+/// Implementations deserialize raw bytes and invoke the appropriate <see cref="IHandler{TMessage}"/>.
+/// </summary>
 public interface IInboundMessageHandler
 {
+    /// <summary>
+    /// Logical name of this handler, used for subscription naming and diagnostics.
+    /// </summary>
     public string Name { get; }
-    
+
+    /// <summary>
+    /// Processes a single inbound message and returns the acknowledgement action the transport should take.
+    /// </summary>
+    /// <param name="message">The raw inbound message delivered by the transport.</param>
+    /// <param name="token">Cancellation token to signal when processing should stop.</param>
+    /// <returns>
+    /// An <see cref="AckAction"/> indicating whether the message should be acknowledged,
+    /// retried, or moved to dead-letter storage.
+    /// </returns>
     Task<AckAction> HandleInboundMessageAsync(InboundMessage message, CancellationToken token);
 }

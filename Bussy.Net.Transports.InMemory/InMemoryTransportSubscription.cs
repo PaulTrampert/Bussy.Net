@@ -4,6 +4,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Bussy.Net.Transports.InMemory;
 
+/// <summary>
+/// Represents an active in-memory subscription. Messages enqueued to this subscription are
+/// processed sequentially by the associated <see cref="IInboundMessageHandler"/>.
+/// </summary>
 public class InMemoryTransportSubscription : ITransportSubscription
 {
     private readonly Channel<InboundMessage> _messages = Channel.CreateUnbounded<InboundMessage>();
@@ -24,6 +28,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         _processTask = ProcessAsync(handler, cancellationToken);
     }
     
+    /// <inheritdoc/>
     public string Name { get; }
 
     internal async Task EnqueueAsync(InboundMessage message, CancellationToken cancellationToken)
@@ -69,6 +74,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         }
     }
     
+    /// <inheritdoc/>
     public void Dispose()
     {
         try
@@ -81,6 +87,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         }
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         try
