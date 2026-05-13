@@ -12,14 +12,11 @@ namespace Bussy.Net.Transport;
 /// <param name="Headers">Metadata headers that should travel with the message.</param>
 /// <param name="MessageId">Stable message id used for traceability and deduplication.</param>
 /// <param name="SentAtUtc">UTC timestamp when the message was created for transport.</param>
-/// <param name="PartitionKey">Optional key used by transports that support ordered partitioning.</param>
 public sealed record OutboundMessage(
     ReadOnlyMemory<byte> Body,
     string Topic,
     string Broker,
     IReadOnlyDictionary<string, string?> Headers,
     Guid MessageId,
-    DateTimeOffset SentAtUtc,
-    string? PartitionKey = null
+    DateTimeOffset SentAtUtc
 );
-

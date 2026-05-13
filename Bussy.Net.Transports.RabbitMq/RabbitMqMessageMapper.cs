@@ -11,7 +11,6 @@ public sealed class RabbitMqMessageMapper : IRabbitMqMessageMapper
     private const string TopicHeader = "bussy.topic";
     private const string BrokerHeader = "bussy.broker";
     private const string SentAtUtcHeader = "bussy.sent-at-utc";
-    private const string PartitionKeyHeader = "bussy.partition-key";
     private const string DeliveryCountHeader = "x-delivery-count";
     private const string DeathHeader = "x-death";
 
@@ -28,7 +27,6 @@ public sealed class RabbitMqMessageMapper : IRabbitMqMessageMapper
         headers[TopicHeader] = message.Topic;
         headers[BrokerHeader] = message.Broker;
         headers[SentAtUtcHeader] = message.SentAtUtc.ToString("O");
-        headers[PartitionKeyHeader] = message.PartitionKey;
 
         return new BasicProperties
         {
@@ -229,6 +227,5 @@ public sealed class RabbitMqMessageMapper : IRabbitMqMessageMapper
             : DateTimeOffset.FromUnixTimeSeconds(timestamp.UnixTime);
     }
 }
-
 
 

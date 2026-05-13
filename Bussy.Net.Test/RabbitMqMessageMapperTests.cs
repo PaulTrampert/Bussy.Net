@@ -31,8 +31,7 @@ public sealed class RabbitMqMessageMapperTests
                 ["trace-id"] = "abc-123"
             },
             MessageId: messageId,
-            SentAtUtc: sentAt,
-            PartitionKey: "customer-42");
+            SentAtUtc: sentAt);
 
         var properties = _subject.MapOutbound(message);
 
@@ -43,7 +42,6 @@ public sealed class RabbitMqMessageMapperTests
         Assert.That(properties.Headers!["bussy.topic"], Is.EqualTo("orders.created"));
         Assert.That(properties.Headers!["bussy.broker"], Is.EqualTo("broker-a"));
         Assert.That(properties.Headers!["bussy.sent-at-utc"], Is.EqualTo(sentAt.ToString("O")));
-        Assert.That(properties.Headers!["bussy.partition-key"], Is.EqualTo("customer-42"));
     }
 
     [Test]
@@ -63,7 +61,6 @@ public sealed class RabbitMqMessageMapperTests
                 ["bussy.topic"] = "orders.created",
                 ["bussy.broker"] = "broker-a",
                 ["bussy.sent-at-utc"] = sentAt.ToString("O"),
-                ["bussy.partition-key"] = "customer-42",
                 ["trace-id"] = "abc-123"
             },
             body: body);
@@ -80,7 +77,6 @@ public sealed class RabbitMqMessageMapperTests
         Assert.That(mapped.ReceivedAtUtc, Is.InRange(before, after));
         Assert.That(mapped.DeliveryAttempt, Is.EqualTo(1));
         Assert.That(mapped.Headers["trace-id"], Is.EqualTo("abc-123"));
-        Assert.That(mapped.Headers["bussy.partition-key"], Is.EqualTo("customer-42"));
     }
 
     [Test]
@@ -178,7 +174,6 @@ public sealed class RabbitMqMessageMapperTests
             CancellationToken.None);
     }
 }
-
 
 
 

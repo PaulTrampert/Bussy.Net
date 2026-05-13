@@ -3,7 +3,11 @@ using RabbitMQ.Client;
 
 namespace Bussy.Net.Transports.RabbitMq;
 
-public sealed class RabbitMqTransportSubscription(string name, string consumerTag, IChannel channel) : ITransportSubscription
+public sealed class RabbitMqTransportSubscription(
+    string name,
+    string consumerTag,
+    IChannel channel,
+    CancellationTokenSource lifetimeCancellation) : ITransportSubscription
 {
     private int _disposed;
 
@@ -31,8 +35,9 @@ public sealed class RabbitMqTransportSubscription(string name, string consumerTa
 
     private async Task DisposeCoreAsync()
     {
+        lifetimeCancellation.Cancel();
         await channel.BasicCancelAsync(consumerTag).ConfigureAwait(false);
         await channel.DisposeAsync().ConfigureAwait(false);
+        lifetimeCancellation.Dispose();
     }
 }
-
