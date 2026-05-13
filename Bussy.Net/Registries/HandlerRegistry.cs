@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Bussy.Net.Registries;
@@ -58,14 +59,15 @@ internal class HandlerRegistry(MessageRouteResolver routeResolver, IServiceProvi
         broker ??= typeRoute.Broker;
         
         var route = new MessageRoute(Topic: topic, Broker: broker);
+        var serializer = serviceProvider.GetService<IMessageSerializer>();
         
         Handlers.AddOrUpdate(
             route, 
             _ => [
-                new InboundMessageHandler<TMessage>(serviceProvider, handlerType, loggerFactory.CreateLogger<InboundMessageHandler<TMessage>>())
+                new InboundMessageHandler<TMessage>(serviceProvider, handlerType, loggerFactory.CreateLogger<InboundMessageHandler<TMessage>>(), serializer)
             ],
             (_, old) => old.Append(
-                new InboundMessageHandler<TMessage>(serviceProvider, handlerType, loggerFactory.CreateLogger<InboundMessageHandler<TMessage>>())
+                new InboundMessageHandler<TMessage>(serviceProvider, handlerType, loggerFactory.CreateLogger<InboundMessageHandler<TMessage>>(), serializer)
             )
         );
 

@@ -291,6 +291,50 @@ public sealed class InboundMessageHandlerTests
         Assert.That(result, Is.EqualTo(AckAction.Ack));
     }
 
+    [Test]
+    public async Task HandleInboundMessageAsync_CustomSerializer_UsesSerializerToDeserialize()
+    {
+        var expectedMessage = new TestMessage("bob", 42);
+        var rawBytes = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+        var inboundMessage = new InboundMessage(
+            rawBytes,
+            "orders.created",
+            "rabbitmq",
+            new Dictionary<string, string?>(),
+            Guid.NewGuid(),
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            1);
+
+        var serializerMock = new Mock<IMessageSerializer>();
+        serializerMock
+            .Setup(s => s.Deserialize<TestMessage>(It.IsAny<ReadOnlyMemory<byte>>()))
+            .Returns(expectedMessage);
+
+        var handlerMock = new Mock<IHandler<TestMessage>>();
+        handlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<MessageContext<TestMessage>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _scopedServiceProviderMock
+            .Setup(p => p.GetService(typeof(IHandler<TestMessage>)))
+            .Returns(handlerMock.Object);
+
+        var subject = new InboundMessageHandler<TestMessage>(
+            _rootServiceProviderMock.Object,
+            typeof(IHandler<TestMessage>),
+            _loggerMock.Object,
+            serializerMock.Object);
+
+        var result = await subject.HandleInboundMessageAsync(inboundMessage, CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(AckAction.Ack));
+        serializerMock.Verify(s => s.Deserialize<TestMessage>(It.Is<ReadOnlyMemory<byte>>(b => b.ToArray().SequenceEqual(rawBytes))), Times.Once);
+        handlerMock.Verify(h => h.HandleAsync(
+            It.Is<MessageContext<TestMessage>>(ctx => ctx.Message == expectedMessage),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private InboundMessageHandler<TestMessage> CreateSubject(Type handlerType)
     {
         return new InboundMessageHandler<TestMessage>(_rootServiceProviderMock.Object, handlerType, _loggerMock.Object);

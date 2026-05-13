@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Bussy.Net.Transport;
 
@@ -13,14 +11,14 @@ internal sealed class DefaultPublisher : IPublisher
     private static readonly IReadOnlyDictionary<string, string?> EmptyHeaders = new Dictionary<string, string?>();
 
     private readonly MessageRouteResolver _routeResolver;
-    private readonly JsonSerializerOptions _serializerOptions;
+    private readonly IMessageSerializer _serializer;
     private readonly IReadOnlyList<ITransport> _transports;
     private readonly IReadOnlyDictionary<string, ITransport> _transportsByName;
 
     public DefaultPublisher(
         IEnumerable<ITransport> transports,
         MessageRouteResolver? routeResolver = null,
-        JsonSerializerOptions? serializerOptions = null)
+        IMessageSerializer? serializer = null)
     {
         ArgumentNullException.ThrowIfNull(transports);
 
@@ -32,7 +30,7 @@ internal sealed class DefaultPublisher : IPublisher
 
         _transportsByName = BuildTransportLookup(_transports);
         _routeResolver = routeResolver ?? new MessageRouteResolver();
-        _serializerOptions = serializerOptions ?? new JsonSerializerOptions();
+        _serializer = serializer ?? new JsonMessageSerializer();
     }
 
     public Task PublishAsync<T>(T message)
@@ -114,8 +112,7 @@ internal sealed class DefaultPublisher : IPublisher
             throw new ArgumentException("Message cannot be null.", nameof(message));
         }
 
-        var json = JsonSerializer.Serialize(message, _serializerOptions);
-        return Encoding.UTF8.GetBytes(json);
+        return _serializer.Serialize(message);
     }
 
     private IReadOnlyList<ITransport> ResolveTargets(string? broker)
