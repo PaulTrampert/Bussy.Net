@@ -11,18 +11,28 @@ public sealed class RabbitMqTransportSubscription(string name, string consumerTa
 
     public void Dispose()
     {
-        DisposeAsync().AsTask().GetAwaiter().GetResult();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {
             return;
         }
 
-        await channel.BasicCancelAsync(consumerTag);
-        await channel.DisposeAsync();
+        _ = DisposeCoreAsync();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        return new ValueTask(DisposeCoreAsync());
+    }
+
+    private async Task DisposeCoreAsync()
+    {
+        await channel.BasicCancelAsync(consumerTag).ConfigureAwait(false);
+        await channel.DisposeAsync().ConfigureAwait(false);
     }
 }
 
