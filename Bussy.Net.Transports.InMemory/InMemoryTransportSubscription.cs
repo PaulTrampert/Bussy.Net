@@ -16,14 +16,14 @@ public class InMemoryTransportSubscription : ITransportSubscription
     
     private readonly Task _processTask;
 
-    private readonly Action _onDispose;
+    private readonly Action<InMemoryTransportSubscription> _onDispose;
 
     internal InMemoryTransportSubscription(
         string name,
         IInboundMessageHandler handler,
         ILogger<InMemoryTransportSubscription> logger, 
         CancellationToken cancellationToken,
-        Action onDispose
+        Action<InMemoryTransportSubscription> onDispose
     )
     {
         Name = name;
@@ -84,7 +84,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         try
         {
             _messages.Writer.Complete();
-            _onDispose();
+            _onDispose(this);
         }
         catch (Exception e)
         {
@@ -99,7 +99,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         {
             _messages.Writer.Complete();
             await _processTask;
-            _onDispose();
+            _onDispose(this);
         }
         catch (Exception e)
         {
