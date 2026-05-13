@@ -45,7 +45,8 @@ public static class ServiceCollectionExtensions
                 .OfType<Type>()
                 .Where(t => t.GetInterfaces()
                     .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
-                .Distinct();
+                .Distinct()
+                .ToList();
 
             foreach (var handlerType in discoveredHandlerTypes)
             {
