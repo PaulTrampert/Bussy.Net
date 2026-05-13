@@ -7,9 +7,6 @@ public class InMemoryEndToEndTests : EndToEndTestFixture
 {
     protected override void ConfigureServices(IServiceCollection services)
     {
-        services.AddBussyInMemoryTransport(configure =>
-        {
-            configure.RegisterHandler<E2ETestMessageHandler, E2ETestMessage>();
-        });
+        services.AddBussyInMemoryTransport();
     }
 }
