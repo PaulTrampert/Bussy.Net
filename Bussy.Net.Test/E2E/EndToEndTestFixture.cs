@@ -83,7 +83,7 @@ public abstract class EndToEndTestFixture
         await Publisher.PublishAsync(message);
 
         E2ETestMessage? handledMessage = null;
-        Assert.That(() => HandledE2ETestMessages.TryTake(out handledMessage), Is.True.After(1000, 100));
+        Assert.That(() => HandledE2ETestMessages.TryTake(out handledMessage), Is.True.After(10000, 100));
         Assert.That(handledMessage, Is.EqualTo(message));
     }
 

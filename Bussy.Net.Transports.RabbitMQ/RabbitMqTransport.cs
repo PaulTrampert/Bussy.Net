@@ -6,7 +6,7 @@ namespace Bussy.Net.Transports.RabbitMQ;
 
 public sealed class RabbitMqTransport(
     RabbitMqTransportOptions options,
-    IChannel rabbitmqChannel,
+    IConnection connection,
     IRabbitMqMessageMapper messageMapper) : ITransport
 {
     public string Name => options.TransportName;
@@ -16,8 +16,10 @@ public sealed class RabbitMqTransport(
     public async Task SendAsync(OutboundMessage message, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(message);
+        
+        await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-        await rabbitmqChannel.ExchangeDeclareAsync(
+        await channel.ExchangeDeclareAsync(
             exchange: message.Topic,
             type: ExchangeType.Fanout,
             durable: true,
@@ -26,7 +28,7 @@ public sealed class RabbitMqTransport(
 
         var properties = messageMapper.MapOutbound(message);
 
-        await rabbitmqChannel.BasicPublishAsync(
+        await channel.BasicPublishAsync(
             exchange: message.Topic,
             routingKey: string.Empty,
             mandatory: false,
@@ -53,8 +55,10 @@ public sealed class RabbitMqTransport(
     {
         ArgumentNullException.ThrowIfNull(topic);
         ArgumentNullException.ThrowIfNull(handler);
+        
+        var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-        await rabbitmqChannel.ExchangeDeclareAsync(
+        await channel.ExchangeDeclareAsync(
             exchange: topic,
             type: ExchangeType.Fanout,
             durable: true,
@@ -62,20 +66,20 @@ public sealed class RabbitMqTransport(
             cancellationToken: cancellationToken);
 
         var queueName = $"{Name}.{topic}.{handler.Name}";
-        await rabbitmqChannel.QueueDeclareAsync(
+        await channel.QueueDeclareAsync(
             queue: queueName,
             durable: true,
             exclusive: false,
             autoDelete: false,
             cancellationToken: cancellationToken);
 
-        await rabbitmqChannel.QueueBindAsync(
+        await channel.QueueBindAsync(
             queue: queueName,
             exchange: topic,
             routingKey: string.Empty,
             cancellationToken: cancellationToken);
 
-        var consumer = new AsyncEventingBasicConsumer(rabbitmqChannel);
+        var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += async (_, eventArgs) =>
         {
             var inbound = messageMapper.MapInbound(eventArgs, Name);
@@ -92,21 +96,21 @@ public sealed class RabbitMqTransport(
             switch (action)
             {
                 case AckAction.Ack:
-                    await rabbitmqChannel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false, cancellationToken);
+                    await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false, cancellationToken);
                     break;
                 case AckAction.DeadLetter:
-                    await rabbitmqChannel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false,
+                    await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: false,
                         cancellationToken);
                     break;
                 case AckAction.Retry:
                 default:
-                    await rabbitmqChannel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: true,
+                    await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: true,
                         cancellationToken);
                     break;
             }
         };
 
-        var consumerTag = await rabbitmqChannel.BasicConsumeAsync(
+        var consumerTag = await channel.BasicConsumeAsync(
             queue: queueName,
             autoAck: false,
             consumer: consumer,
@@ -114,6 +118,7 @@ public sealed class RabbitMqTransport(
 
         return new RabbitMqTransportSubscription(
             $"{Name}_{topic}_{handler.Name}",
-            () => new ValueTask(rabbitmqChannel.BasicCancelAsync(consumerTag)));
+            consumerTag,
+            channel);
     }
 }

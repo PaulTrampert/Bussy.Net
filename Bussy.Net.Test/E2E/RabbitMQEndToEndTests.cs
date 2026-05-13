@@ -55,14 +55,6 @@ public class RabbitMQEndToEndTests : EndToEndTestFixture
     {
         // Provide the pre-initialized async connection.
         services.AddSingleton<IConnection>(_ => _cachedConnection ?? throw new InvalidOperationException("Connection not initialized"));
-
-        // Channel is NOT thread-safe; scoped is usually safest for request/message pipeline usage.
-        services.AddScoped<IChannel>(sp =>
-        {
-            var connection = sp.GetRequiredService<IConnection>();
-            return connection.CreateChannelAsync().GetAwaiter().GetResult();
-        });
-
         services.AddBussyRabbitMqTransport(configure =>
         {
             configure.RegisterHandler<E2ETestMessageHandler, E2ETestMessage>();

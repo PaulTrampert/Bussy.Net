@@ -1,10 +1,10 @@
 using Bussy.Net.Transport;
+using RabbitMQ.Client;
 
 namespace Bussy.Net.Transports.RabbitMQ;
 
-public sealed class RabbitMqTransportSubscription(string name, Func<ValueTask>? onDispose = null) : ITransportSubscription
+public sealed class RabbitMqTransportSubscription(string name, string consumerTag, IChannel channel) : ITransportSubscription
 {
-    private readonly Func<ValueTask>? _onDispose = onDispose;
     private int _disposed;
 
     public string Name { get; } = name;
@@ -21,10 +21,8 @@ public sealed class RabbitMqTransportSubscription(string name, Func<ValueTask>? 
             return;
         }
 
-        if (_onDispose is not null)
-        {
-            await _onDispose();
-        }
+        await channel.BasicCancelAsync(consumerTag);
+        await channel.DisposeAsync();
     }
 }
 
