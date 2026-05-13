@@ -105,10 +105,6 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
         services.AddBussyRabbitMqTransport(configure =>
         {
             configure.RegisterHandler<E2ETestMessageHandler, E2ETestMessage>();
-        }, rabbitMq =>
-        {
-            rabbitMq.Host = _rabbitMqContainer.Hostname;
-            rabbitMq.Port = _rabbitMqContainer.GetMappedPublicPort(5672);
         });
     }
 }
