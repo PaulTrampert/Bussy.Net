@@ -15,8 +15,9 @@ public abstract class EndToEndTestFixture
     
     protected static readonly ConcurrentBag<E2ETestMessage> HandledE2ETestMessages = new();
 
-    protected virtual void StartExternalDependencies()
+    protected virtual Task StartExternalDependenciesAsync()
     {
+        return Task.CompletedTask;
     }
 
     protected virtual Task StopExternalDependenciesAsync()
@@ -29,7 +30,7 @@ public abstract class EndToEndTestFixture
     [OneTimeSetUp]
     public async Task TestFixtureSetup()
     {
-        StartExternalDependencies();
+        await StartExternalDependenciesAsync();
 
         var hostBuilder = Host.CreateDefaultBuilder();
 
