@@ -8,6 +8,10 @@ internal class HandlerRegistry(MessageRouteResolver routeResolver, IServiceProvi
 {
     public ConcurrentDictionary<MessageRoute, IEnumerable<IInboundMessageHandler>> Handlers { get; } = new();
 
+    private readonly ConcurrentDictionary<Type, bool> _registeredHandlerTypes = new();
+
+    public bool IsHandlerRegistered(Type handlerType) => _registeredHandlerTypes.ContainsKey(handlerType);
+
     public void RegisterHandler<THandler, TMessage>(string? topic = null, string? broker = null) 
         where THandler : IHandler<TMessage>
     {
@@ -64,5 +68,7 @@ internal class HandlerRegistry(MessageRouteResolver routeResolver, IServiceProvi
                 new InboundMessageHandler<TMessage>(serviceProvider, handlerType, loggerFactory.CreateLogger<InboundMessageHandler<TMessage>>())
             )
         );
+
+        _registeredHandlerTypes.TryAdd(handlerType, true);
     }
 }
