@@ -57,8 +57,11 @@ public sealed class ServiceCollectionExtensionsTests
     {
         using var provider = BuildProvider(sc =>
         {
+            // Register as the IHandler<> interface for DI injection (e.g. via constructor).
+            // Also register by concrete type so InboundMessageHandler can resolve it with
+            // GetRequiredService(handlerType) — Bussy always resolves handlers by their concrete type.
             sc.AddScoped<IHandler<TestMessage>, SimpleTestHandler>();
-            sc.AddScoped<SimpleTestHandler>(); // still needed so InboundMessageHandler can resolve by concrete type
+            sc.AddScoped<SimpleTestHandler>();
             sc.AddBussy();
         });
 

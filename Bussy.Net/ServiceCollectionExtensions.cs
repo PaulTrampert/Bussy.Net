@@ -41,20 +41,17 @@ public static class ServiceCollectionExtensions
             // Auto-subscribe every IHandler<> implementation that has been registered in the DI container.
             // Handlers already registered via the configure callback are skipped to avoid duplicate subscriptions.
             var discoveredHandlerTypes = services
-                .Select(d => d.ImplementationType
-                    ?? (d.ImplementationFactory == null && d.ImplementationInstance == null
-                        && !d.ServiceType.IsInterface && !d.ServiceType.IsAbstract
-                        ? d.ServiceType : null))
-                .Where(t => t is not null)
-                .Where(t => t!.GetInterfaces()
+                .Select(GetConcreteImplementationType)
+                .OfType<Type>()
+                .Where(t => t.GetInterfaces()
                     .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
                 .Distinct();
 
             foreach (var handlerType in discoveredHandlerTypes)
             {
-                if (!configurator.HandlerRegistry.IsHandlerRegistered(handlerType!))
+                if (!configurator.HandlerRegistry.IsHandlerRegistered(handlerType))
                 {
-                    configurator.HandlerRegistry.RegisterHandler(handlerType!);
+                    configurator.HandlerRegistry.RegisterHandler(handlerType);
                 }
             }
 
@@ -63,6 +60,30 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPublisher, DefaultPublisher>();
         
         return services;
+    }
+
+    /// <summary>
+    /// Returns the concrete implementation type for a <see cref="ServiceDescriptor"/>, or
+    /// <see langword="null"/> when the type cannot be statically determined (e.g. factory or instance registrations
+    /// where the service type is an interface or abstract class).
+    /// </summary>
+    private static Type? GetConcreteImplementationType(ServiceDescriptor descriptor)
+    {
+        if (descriptor.ImplementationType != null)
+            return descriptor.ImplementationType;
+
+        // Factory- and instance-based registrations don't expose a static implementation type,
+        // but when the service is registered directly by its concrete class (e.g. services.AddScoped<MyHandler>()),
+        // the ServiceType *is* the concrete type.
+        if (descriptor.ImplementationFactory == null
+            && descriptor.ImplementationInstance == null
+            && !descriptor.ServiceType.IsInterface
+            && !descriptor.ServiceType.IsAbstract)
+        {
+            return descriptor.ServiceType;
+        }
+
+        return null;
     }
 
     /// <summary>
