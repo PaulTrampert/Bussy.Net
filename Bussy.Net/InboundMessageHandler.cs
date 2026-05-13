@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.Json;
 using Bussy.Net.Transport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,6 +14,7 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
     private readonly IServiceProvider _serviceProvider;
     private readonly Type _handlerType;
     private readonly ILogger<InboundMessageHandler<T>> _logger;
+    private readonly IMessageSerializer _serializer;
 
     /// <inheritdoc/>
     public string Name => _handlerType.Name;
@@ -26,10 +25,14 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
     /// <param name="serviceProvider">The service provider used to resolve a scoped handler instance per message.</param>
     /// <param name="handlerType">The concrete type that implements <see cref="IHandler{T}"/>.</param>
     /// <param name="logger">Logger instance for this adapter.</param>
+    /// <param name="serializer">
+    /// Optional serializer used to deserialize inbound messages.
+    /// When <see langword="null"/>, a default <see cref="JsonMessageSerializer"/> is used.
+    /// </param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="handlerType"/> does not implement <see cref="IHandler{T}"/>.
     /// </exception>
-    public InboundMessageHandler(IServiceProvider serviceProvider, Type handlerType, ILogger<InboundMessageHandler<T>> logger)
+    public InboundMessageHandler(IServiceProvider serviceProvider, Type handlerType, ILogger<InboundMessageHandler<T>> logger, IMessageSerializer? serializer = null)
     {
         if (!typeof(IHandler<T>).IsAssignableFrom(handlerType))
         {
@@ -38,6 +41,7 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
         _serviceProvider = serviceProvider;
         _handlerType = handlerType;
         _logger = logger;
+        _serializer = serializer ?? new JsonMessageSerializer();
     }
 
 
@@ -49,7 +53,7 @@ public class InboundMessageHandler<T> : IInboundMessageHandler
         using var scope = _serviceProvider.CreateScope();
         try
         {
-            var messageObj = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(message.Body.Span));
+            var messageObj = _serializer.Deserialize<T>(message.Body);
             if (messageObj == null)
             {
                 throw new MessageNullException();

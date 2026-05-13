@@ -207,5 +207,24 @@ public sealed class DefaultPublisherTests
         _rabbitMock.Verify(t => t.SendBatchAsync(It.IsAny<IReadOnlyCollection<OutboundMessage>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // --- Serializer ---
+
+    [Test]
+    public async Task PublishAsync_CustomSerializer_UsesSerializerOutput()
+    {
+        var expectedBytes = new byte[] { 0x01, 0x02, 0x03 };
+        var serializerMock = new Mock<IMessageSerializer>();
+        serializerMock
+            .Setup(s => s.Serialize(It.IsAny<TestMessage>()))
+            .Returns(new ReadOnlyMemory<byte>(expectedBytes));
+
+        var subject = new DefaultPublisher([_sqsMock.Object], serializer: serializerMock.Object);
+        await subject.PublishAsync(CreateMessage());
+
+        _sqsMock.Verify(t => t.SendAsync(
+            It.Is<OutboundMessage>(m => m.Body.ToArray().SequenceEqual(expectedBytes)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static TestMessage CreateMessage() => new("alice", 7);
 }

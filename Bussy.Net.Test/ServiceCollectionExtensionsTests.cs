@@ -227,6 +227,36 @@ public sealed class ServiceCollectionExtensionsTests
     }
 
     // ---------------------------------------------------------------------------
+    // IMessageSerializer registration
+    // ---------------------------------------------------------------------------
+
+    [Test]
+    public void AddBussy_RegistersJsonMessageSerializer_AsDefaultIMessageSerializer()
+    {
+        using var provider = BuildProvider(sc =>
+        {
+            sc.AddBussy();
+        });
+
+        var serializer = provider.GetRequiredService<IMessageSerializer>();
+        Assert.That(serializer, Is.InstanceOf<JsonMessageSerializer>());
+    }
+
+    [Test]
+    public void AddBussy_DoesNotOverride_CustomIMessageSerializerRegisteredBeforehand()
+    {
+        var customSerializer = new Mock<IMessageSerializer>().Object;
+        using var provider = BuildProvider(sc =>
+        {
+            sc.AddSingleton(customSerializer);
+            sc.AddBussy();
+        });
+
+        var serializer = provider.GetRequiredService<IMessageSerializer>();
+        Assert.That(serializer, Is.SameAs(customSerializer));
+    }
+
+    // ---------------------------------------------------------------------------
     // Test handler types
     // ---------------------------------------------------------------------------
 

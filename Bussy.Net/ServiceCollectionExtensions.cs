@@ -2,6 +2,7 @@ using System.Reflection;
 using Bussy.Net.Helpers;
 using Bussy.Net.Registries;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace Bussy.Net;
@@ -25,6 +26,7 @@ public static class ServiceCollectionExtensions
     /// <returns>The same <see cref="IServiceCollection"/> instance so calls can be chained.</returns>
     public static IServiceCollection AddBussy(this IServiceCollection services, Action<BussyConfigurator>? configure = null)
     {
+        services.TryAddSingleton<IMessageSerializer, JsonMessageSerializer>();
         services.AddSingleton<HandlerRegistry>();
         services.AddSingleton<TransportRegistry>();
         services.AddSingleton<MessageRouteResolver>();
