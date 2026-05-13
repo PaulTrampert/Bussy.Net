@@ -6,6 +6,13 @@
         <Nullable>enable</Nullable>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Authors>Paul Trampert</Authors>
+        <Description>RabbitMQ transport integration for Bussy.Net.</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/PaulTrampert/Bussy.Net</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/PaulTrampert/Bussy.Net</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,6 +21,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Bussy.Net\Bussy.Net.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" Link="README.md" />
     </ItemGroup>
 
 </Project>
