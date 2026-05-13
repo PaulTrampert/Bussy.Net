@@ -37,9 +37,11 @@ public sealed class RabbitMqTransport(
             cancellationToken: cancellationToken);
     }
 
-    public Task SendBatchAsync(IReadOnlyCollection<OutboundMessage> messages, CancellationToken cancellationToken = default)
+    public async Task SendBatchAsync(IReadOnlyCollection<OutboundMessage> messages, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("RabbitMQ batch send is not implemented yet.");
+        ArgumentNullException.ThrowIfNull(messages);
+        
+        await Task.WhenAll(messages.Select(message => SendAsync(message, cancellationToken)));
     }
 
     public Task<ITransportSubscription> SubscribeAsync(string topic, IInboundMessageHandler handler,
