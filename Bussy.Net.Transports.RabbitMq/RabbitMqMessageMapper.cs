@@ -6,6 +6,10 @@ using RabbitMQ.Client.Events;
 
 namespace Bussy.Net.Transports.RabbitMq;
 
+/// <summary>
+/// Default implementation of <see cref="IRabbitMqMessageMapper"/> that converts between
+/// Bussy.Net envelopes and RabbitMQ AMQP primitives using well-known header conventions.
+/// </summary>
 public sealed class RabbitMqMessageMapper : IRabbitMqMessageMapper
 {
     private const string TopicHeader = "bussy.topic";
@@ -14,6 +18,7 @@ public sealed class RabbitMqMessageMapper : IRabbitMqMessageMapper
     private const string DeliveryCountHeader = "x-delivery-count";
     private const string DeathHeader = "x-death";
 
+    /// <inheritdoc/>
     public BasicProperties MapOutbound(OutboundMessage message)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -37,6 +42,7 @@ public sealed class RabbitMqMessageMapper : IRabbitMqMessageMapper
         };
     }
 
+    /// <inheritdoc/>
     public InboundMessage MapInbound(BasicDeliverEventArgs eventArgs, string transportName)
     {
         ArgumentNullException.ThrowIfNull(eventArgs);
