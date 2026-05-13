@@ -84,23 +84,12 @@ public sealed class BussyServiceTests
     }
 
     [Test]
-    public async Task StopAsync_CancelsExecuteStoppingToken()
+    public async Task StopAsync_CompletesExecuteTask()
     {
-        _handlerRegistry.RegisterHandler<HandlerA, TestMessage>(topic: "topic-a");
-
-        var tokenCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var rabbit = CreateTransport(
-            "rabbitmq",
-            null,
-            null,
-            token => token.Register(() => tokenCancelled.TrySetResult()));
-        _transportRegistry.Register(rabbit.Object);
-
         await _subject.StartAsync(CancellationToken.None);
         await Task.Delay(50);
         await _subject.StopAsync(CancellationToken.None);
 
-        await tokenCancelled.Task.WaitAsync(TimeSpan.FromSeconds(1));
         Assert.That(_subject.ExecuteTask, Is.Not.Null);
         Assert.That(_subject.ExecuteTask!.IsCompleted, Is.True);
     }
@@ -142,9 +131,9 @@ public sealed class BussyServiceTests
         transport
             .Setup(t => t.SubscribeAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<InboundMessage, CancellationToken, Task<AckAction>>>(),
+                It.IsAny<IInboundMessageHandler>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, Func<InboundMessage, CancellationToken, Task<AckAction>>, CancellationToken>((topic, _, token) =>
+            .Callback<string, IInboundMessageHandler, CancellationToken>((topic, _, token) =>
             {
                 topics?.Add(topic);
                 onToken?.Invoke(token);
@@ -184,7 +173,4 @@ public sealed class BussyServiceTests
         }
     }
 }
-
-
-
 

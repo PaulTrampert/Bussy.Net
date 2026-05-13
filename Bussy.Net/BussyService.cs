@@ -11,27 +11,14 @@ internal class BussyService(BussyConfigurator bussyConfigurator, ILogger<BussySe
     private readonly HandlerRegistry _handlerRegistry = bussyConfigurator.HandlerRegistry;
     private readonly TransportRegistry _transportRegistry = bussyConfigurator.TransportRegistry;
 
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await SubscribeHandlersAsync(cancellationToken);
+        await base.StartAsync(cancellationToken);
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        foreach (var (route, handlers) in _handlerRegistry.Handlers)
-        {
-            var handlerList = handlers.ToList();
-            IEnumerable<ITransport> transports = route.Broker is not null
-                ? _transportRegistry.Transports.TryGetValue(route.Broker, out var t) ? [t] : []
-                : _transportRegistry.Transports.Values;
-
-            foreach (var transport in transports)
-            foreach (var handler in handlerList)
-            {
-                var subscription = await transport.SubscribeAsync(
-                    route.Topic,
-                    handler.HandleInboundMessageAsync,
-                    stoppingToken);
-
-                _subscriptions.Add(subscription);
-            }
-        }
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -50,6 +37,28 @@ internal class BussyService(BussyConfigurator bussyConfigurator, ILogger<BussySe
                 }
 
                 break;
+            }
+        }
+    }
+
+    private async Task SubscribeHandlersAsync(CancellationToken stoppingToken)
+    {
+        foreach (var (route, handlers) in _handlerRegistry.Handlers)
+        {
+            var handlerList = handlers.ToList();
+            IEnumerable<ITransport> transports = route.Broker is not null
+                ? _transportRegistry.Transports.TryGetValue(route.Broker, out var t) ? [t] : []
+                : _transportRegistry.Transports.Values;
+
+            foreach (var transport in transports)
+            foreach (var handler in handlerList)
+            {
+                var subscription = await transport.SubscribeAsync(
+                    route.Topic,
+                    handler,
+                    stoppingToken);
+
+                _subscriptions.Add(subscription);
             }
         }
     }

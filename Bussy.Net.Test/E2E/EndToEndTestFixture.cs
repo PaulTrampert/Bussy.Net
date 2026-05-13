@@ -15,8 +15,14 @@ public abstract class EndToEndTestFixture
     
     protected static readonly ConcurrentBag<E2ETestMessage> HandledE2ETestMessages = new();
 
-    protected virtual void StartExternalDependencies()
+    protected virtual Task StartExternalDependenciesAsync()
     {
+        return Task.CompletedTask;
+    }
+
+    protected virtual Task StopExternalDependenciesAsync()
+    {
+        return Task.CompletedTask;
     }
 
     protected abstract void ConfigureServices(IServiceCollection services);
@@ -24,6 +30,8 @@ public abstract class EndToEndTestFixture
     [OneTimeSetUp]
     public async Task TestFixtureSetup()
     {
+        await StartExternalDependenciesAsync();
+
         var hostBuilder = Host.CreateDefaultBuilder();
 
         hostBuilder.ConfigureServices(sc =>
@@ -63,6 +71,8 @@ public abstract class EndToEndTestFixture
         {
             _host.Dispose();
         }
+
+        await StopExternalDependenciesAsync();
     }
 
     [Test]
@@ -73,7 +83,7 @@ public abstract class EndToEndTestFixture
         await Publisher.PublishAsync(message);
 
         E2ETestMessage? handledMessage = null;
-        Assert.That(() => HandledE2ETestMessages.TryTake(out handledMessage), Is.True.After(1000, 100));
+        Assert.That(() => HandledE2ETestMessages.TryTake(out handledMessage), Is.True.After(30000, 100));
         Assert.That(handledMessage, Is.EqualTo(message));
     }
 

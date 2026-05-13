@@ -20,12 +20,12 @@ public sealed class InMemoryTransportSubscriptionTests
 
         var subscription = await transport.SubscribeAsync(
             "orders.created",
-            (message, _) =>
+            new DelegateInboundMessageHandler((message, _) =>
             {
                 received = message;
                 receivedSignal.TrySetResult();
                 return Task.FromResult(AckAction.Ack);
-            },
+            }),
             CancellationToken.None);
 
         await transport.SendAsync(CreateOutboundMessage(topic: "orders.created"));
@@ -48,7 +48,7 @@ public sealed class InMemoryTransportSubscriptionTests
 
         var subscription = await transport.SubscribeAsync(
             "orders.created",
-            (message, _) =>
+            new DelegateInboundMessageHandler((message, _) =>
             {
                 attempts.Add(message.DeliveryAttempt);
                 if (attempts.Count == 1)
@@ -58,7 +58,7 @@ public sealed class InMemoryTransportSubscriptionTests
 
                 secondAttemptSignal.TrySetResult();
                 return Task.FromResult(AckAction.Ack);
-            },
+            }),
             CancellationToken.None);
 
         await transport.SendAsync(CreateOutboundMessage(topic: "orders.created"));
@@ -80,11 +80,11 @@ public sealed class InMemoryTransportSubscriptionTests
 
         var subscription = await transport.SubscribeAsync(
             "orders.created",
-            (_, _) =>
+            new DelegateInboundMessageHandler((_, _) =>
             {
                 handledSignal.TrySetResult();
                 return Task.FromResult(AckAction.DeadLetter);
-            },
+            }),
             CancellationToken.None);
 
         await transport.SendAsync(CreateOutboundMessage(topic: "orders.created"));
@@ -109,11 +109,11 @@ public sealed class InMemoryTransportSubscriptionTests
         var callbackCount = 0;
         var subscription = await transport.SubscribeAsync(
             "orders.created",
-            (_, _) =>
+            new DelegateInboundMessageHandler((_, _) =>
             {
                 Interlocked.Increment(ref callbackCount);
                 return Task.FromResult(AckAction.Ack);
-            },
+            }),
             cts.Token);
 
         cts.Cancel();
@@ -138,12 +138,12 @@ public sealed class InMemoryTransportSubscriptionTests
 
         var subscription = await transport.SubscribeAsync(
             "orders.created",
-            async (_, _) =>
+            new DelegateInboundMessageHandler(async (_, _) =>
             {
                 handlerStarted.TrySetResult();
                 await releaseHandler.Task;
                 return AckAction.Ack;
-            },
+            }),
             CancellationToken.None);
 
         await transport.SendAsync(CreateOutboundMessage(topic: "orders.created"));
@@ -211,9 +211,16 @@ public sealed class InMemoryTransportSubscriptionTests
         }
     }
 
+    private sealed class DelegateInboundMessageHandler(
+        Func<InboundMessage, CancellationToken, Task<AckAction>> callback) : IInboundMessageHandler
+    {
+        public string Name => nameof(DelegateInboundMessageHandler);
+        
+        public Task<AckAction> HandleInboundMessageAsync(InboundMessage message, CancellationToken token)
+        {
+            return callback(message, token);
+        }
+    }
+
     private sealed record LoggedEvent(LogLevel Level, string Message, Exception? Exception);
 }
-
-
-
-

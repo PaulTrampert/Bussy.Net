@@ -14,14 +14,14 @@ public class InMemoryTransportSubscription : ITransportSubscription
     
     internal InMemoryTransportSubscription(
         string name,
-        Func<InboundMessage, CancellationToken, Task<AckAction>> processMessage,
+        IInboundMessageHandler handler,
         ILogger<InMemoryTransportSubscription> logger, 
         CancellationToken cancellationToken
     )
     {
         Name = name;
         _logger = logger;
-        _processTask = ProcessAsync(processMessage, cancellationToken);
+        _processTask = ProcessAsync(handler, cancellationToken);
     }
     
     public string Name { get; }
@@ -31,7 +31,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         await _messages.Writer.WriteAsync(message, cancellationToken);
     }
     
-    private async Task ProcessAsync(Func<InboundMessage, CancellationToken, Task<AckAction>> processMessage, CancellationToken cancellationToken)
+    private async Task ProcessAsync(IInboundMessageHandler handler, CancellationToken cancellationToken)
     {
         try
         {
@@ -44,7 +44,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
                         continue;
                     }
                     message = message with {DeliveryAttempt = message.DeliveryAttempt + 1};
-                    var result = await processMessage(message, cancellationToken);
+                    var result = await handler.HandleInboundMessageAsync(message, cancellationToken);
                     if (result == AckAction.Retry)
                     {
                         await _messages.Writer.WriteAsync(message, cancellationToken);
