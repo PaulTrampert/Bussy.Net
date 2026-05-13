@@ -8,7 +8,9 @@ namespace Bussy.Net.Test.E2E;
 
 public class RabbitMqEndToEndTests : EndToEndTestFixture
 {
+#pragma warning disable NUnit1032
     private IContainer _rabbitMqContainer = null!;
+#pragma warning restore NUnit1032
     private IConnection? _cachedConnection;
     private static string RabbitMqConfigPath => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "rabbitmq.conf"));
 
