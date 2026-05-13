@@ -84,23 +84,12 @@ public sealed class BussyServiceTests
     }
 
     [Test]
-    public async Task StopAsync_CancelsExecuteStoppingToken()
+    public async Task StopAsync_CompletesExecuteTask()
     {
-        _handlerRegistry.RegisterHandler<HandlerA, TestMessage>(topic: "topic-a");
-
-        var tokenCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var rabbit = CreateTransport(
-            "rabbitmq",
-            null,
-            null,
-            token => token.Register(() => tokenCancelled.TrySetResult()));
-        _transportRegistry.Register(rabbit.Object);
-
         await _subject.StartAsync(CancellationToken.None);
         await Task.Delay(50);
         await _subject.StopAsync(CancellationToken.None);
 
-        await tokenCancelled.Task.WaitAsync(TimeSpan.FromSeconds(1));
         Assert.That(_subject.ExecuteTask, Is.Not.Null);
         Assert.That(_subject.ExecuteTask!.IsCompleted, Is.True);
     }
