@@ -15,16 +15,20 @@ public class InMemoryTransportSubscription : ITransportSubscription
     private readonly ILogger<InMemoryTransportSubscription> _logger;
     
     private readonly Task _processTask;
-    
+
+    private readonly Action<InMemoryTransportSubscription> _onDispose;
+
     internal InMemoryTransportSubscription(
         string name,
         IInboundMessageHandler handler,
         ILogger<InMemoryTransportSubscription> logger, 
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        Action<InMemoryTransportSubscription> onDispose
     )
     {
         Name = name;
         _logger = logger;
+        _onDispose = onDispose;
         _processTask = ProcessAsync(handler, cancellationToken);
     }
     
@@ -80,6 +84,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         try
         {
             _messages.Writer.Complete();
+            _onDispose(this);
         }
         catch (Exception e)
         {
@@ -94,6 +99,7 @@ public class InMemoryTransportSubscription : ITransportSubscription
         {
             _messages.Writer.Complete();
             await _processTask;
+            _onDispose(this);
         }
         catch (Exception e)
         {

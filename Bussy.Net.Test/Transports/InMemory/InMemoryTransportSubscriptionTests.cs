@@ -128,6 +128,50 @@ public sealed class InMemoryTransportSubscriptionTests
     }
 
     [Test]
+    public async Task DisposeAsync_WhenDisposed_RemovesSubscriptionFromTransport()
+    {
+        using var loggerFactory = CreateLoggerFactory();
+        var transport = new InMemoryTransport(loggerFactory);
+
+        var firstReceivedSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var subscription = await transport.SubscribeAsync(
+            "orders.created",
+            new DelegateInboundMessageHandler((_, _) =>
+            {
+                firstReceivedSignal.TrySetResult();
+                return Task.FromResult(AckAction.Ack);
+            }),
+            CancellationToken.None);
+
+        // Confirm it receives messages before disposal
+        await transport.SendAsync(CreateOutboundMessage(topic: "orders.created"));
+        await firstReceivedSignal.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+        await subscription.DisposeAsync();
+
+        var callbackCount = 0;
+        var secondReceivedSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var subscription2 = await transport.SubscribeAsync(
+            "orders.created",
+            new DelegateInboundMessageHandler((_, _) =>
+            {
+                Interlocked.Increment(ref callbackCount);
+                secondReceivedSignal.TrySetResult();
+                return Task.FromResult(AckAction.Ack);
+            }),
+            CancellationToken.None);
+
+        await transport.SendAsync(CreateOutboundMessage(topic: "orders.created"));
+        await secondReceivedSignal.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+        // Only the second (still-live) subscription should have received the message
+        Assert.That(callbackCount, Is.EqualTo(1));
+
+        await subscription2.DisposeAsync();
+    }
+
+    [Test]
     public async Task DisposeAsync_WhenHandlerIsInFlight_WaitsForHandlerToComplete()
     {
         using var loggerFactory = CreateLoggerFactory();
