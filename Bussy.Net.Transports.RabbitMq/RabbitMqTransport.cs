@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Bussy.Net.Transport;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 using RabbitMQ.Client.Events;
 
 namespace Bussy.Net.Transports.RabbitMq;
@@ -31,30 +32,40 @@ public sealed class RabbitMqTransport(
         var channel = await GetOrCreatePublisherChannelAsync(cancellationToken);
         var properties = messageMapper.MapOutbound(message);
 
-        await _publisherSendLock.WaitAsync(cancellationToken);
-        try
+        for (var attempt = 0; ; attempt++)
         {
-            if (_declaredExchanges.TryAdd(message.Topic, DeclaredExchangeMarker))
+            await _publisherSendLock.WaitAsync(cancellationToken);
+            try
             {
-                await channel.ExchangeDeclareAsync(
-                    exchange: message.Topic,
-                    type: ExchangeType.Fanout,
-                    durable: true,
-                    autoDelete: false,
-                    cancellationToken: cancellationToken);
-            }
+                if (!_declaredExchanges.ContainsKey(message.Topic))
+                {
+                    await channel.ExchangeDeclareAsync(
+                        exchange: message.Topic,
+                        type: ExchangeType.Fanout,
+                        durable: true,
+                        autoDelete: false,
+                        cancellationToken: cancellationToken);
+                    _declaredExchanges.TryAdd(message.Topic, DeclaredExchangeMarker);
+                }
 
-            await channel.BasicPublishAsync(
-                exchange: message.Topic,
-                routingKey: string.Empty,
-                mandatory: false,
-                basicProperties: properties,
-                body: message.Body,
-                cancellationToken: cancellationToken);
-        }
-        finally
-        {
-            _publisherSendLock.Release();
+                await channel.BasicPublishAsync(
+                    exchange: message.Topic,
+                    routingKey: string.Empty,
+                    mandatory: false,
+                    basicProperties: properties,
+                    body: message.Body,
+                    cancellationToken: cancellationToken);
+
+                return;
+            }
+            catch (AlreadyClosedException) when (attempt == 0)
+            {
+                channel = await GetOrCreatePublisherChannelAsync(cancellationToken);
+            }
+            finally
+            {
+                _publisherSendLock.Release();
+            }
         }
     }
 
@@ -102,7 +113,7 @@ public sealed class RabbitMqTransport(
             routingKey: string.Empty,
             cancellationToken: cancellationToken);
 
-        var subscriptionCancellation = new CancellationTokenSource();
+        var subscriptionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var subscriptionCancellationToken = subscriptionCancellation.Token;
 
         var consumer = new AsyncEventingBasicConsumer(channel);
@@ -116,7 +127,11 @@ public sealed class RabbitMqTransport(
             }
             catch (OperationCanceledException) when (subscriptionCancellationToken.IsCancellationRequested)
             {
-                logger.LogDebug("Message processing canceled for subscription {SubscriptionName}.", $"{Name}_{topic}_{handler.Name}");
+                logger.LogDebug(
+                    "Message processing canceled for subscription {TransportName}_{Topic}_{HandlerName}.",
+                    Name,
+                    topic,
+                    handler.Name);
                 return;
             }
             catch
@@ -144,7 +159,11 @@ public sealed class RabbitMqTransport(
             }
             catch (OperationCanceledException) when (subscriptionCancellationToken.IsCancellationRequested)
             {
-                logger.LogDebug("Message acknowledgement canceled for subscription {SubscriptionName}.", $"{Name}_{topic}_{handler.Name}");
+                logger.LogDebug(
+                    "Message acknowledgement canceled for subscription {TransportName}_{Topic}_{HandlerName}.",
+                    Name,
+                    topic,
+                    handler.Name);
             }
         };
 
