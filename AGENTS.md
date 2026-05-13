@@ -31,7 +31,7 @@ dotnet build Bussy.Net.sln
 dotnet test Bussy.Net.sln
 ```
 
-The RabbitMQ end-to-end tests require a running RabbitMQ instance (see `Bussy.Net.Test/rabbitmq.conf`). They are skipped automatically when the broker is unavailable.
+The RabbitMQ end-to-end tests automatically spin up a RabbitMQ container using Testcontainers. `Bussy.Net.Test/rabbitmq.conf` is mounted into the container as its configuration file.
 
 ## Key Concepts
 
@@ -54,7 +54,7 @@ The RabbitMQ end-to-end tests require a running RabbitMQ instance (see `Bussy.Ne
 - Target the SDK version pinned in `global.json`.
 - Use `sealed` for concrete classes that are not designed for inheritance.
 - Use `record` or `sealed record` for message types and value objects.
-- Handlers and publishers are registered as **scoped** services; transports and registries are **singletons**.
+- Handlers are registered as **scoped** services; transports and registries are **singletons**. Transports generally implement `IPublisher`, so `IPublisher` is often a singleton.
 - Tests use **NUnit** with `[TestFixture]`/`[Test]`/`[SetUp]`/`[TearDown]` attributes.
 - Keep transport-specific code out of the core `Bussy.Net` library.
 
@@ -62,4 +62,4 @@ The RabbitMQ end-to-end tests require a running RabbitMQ instance (see `Bussy.Ne
 
 - PRs must target `main`.
 - The CI pipeline (`.github/workflows/dotnet-library.yml`) builds, tests, and publishes NuGet packages on merge to `main`.
-- PR titles are validated by `.github/pr-title-checker-config.json` – follow Conventional Commits style (e.g., `feat:`, `fix:`, `chore:`).
+- PR titles are validated by `.github/pr-title-checker-config.json` – the title must start with one of: `(MAJOR)`, `(MINOR)`, or `(PATCH)`.
