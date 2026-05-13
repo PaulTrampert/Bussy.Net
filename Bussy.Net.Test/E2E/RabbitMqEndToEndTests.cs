@@ -18,8 +18,7 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
     {
         await base.StartExternalDependenciesAsync();
 
-        _rabbitMqContainer = new ContainerBuilder()
-            .WithImage("rabbitmq:3.13-management")
+        _rabbitMqContainer = new ContainerBuilder("rabbitmq:3.13-management")
             .WithBindMount(RabbitMqConfigPath, "/etc/rabbitmq.conf")
             .WithEnvironment("RABBITMQ_CONFIG_FILE", "/etc/rabbitmq.conf")
             .WithPortBinding(5672, true)
@@ -92,10 +91,7 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
             _cachedConnection.Dispose();
         }
 
-        if (_rabbitMqContainer is not null)
-        {
-            await _rabbitMqContainer.DisposeAsync();
-        }
+        await _rabbitMqContainer.DisposeAsync();
 
         await base.StopExternalDependenciesAsync();
     }
