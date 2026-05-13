@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Bussy.Net.Transport;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -8,8 +9,10 @@ namespace Bussy.Net.Transports.RabbitMq;
 public sealed class RabbitMqTransport(
     RabbitMqTransportOptions options,
     IConnection connection,
-    IRabbitMqMessageMapper messageMapper) : ITransport, IAsyncDisposable
+    IRabbitMqMessageMapper messageMapper,
+    ILogger<RabbitMqTransport> logger) : ITransport, IAsyncDisposable
 {
+    private const byte DeclaredExchangeMarker = byte.MinValue;
     private readonly SemaphoreSlim _publisherChannelLock = new(1, 1);
     private readonly SemaphoreSlim _publisherSendLock = new(1, 1);
     private readonly ConcurrentDictionary<string, byte> _declaredExchanges = new(StringComparer.Ordinal);
@@ -31,7 +34,7 @@ public sealed class RabbitMqTransport(
         await _publisherSendLock.WaitAsync(cancellationToken);
         try
         {
-            if (_declaredExchanges.TryAdd(message.Topic, 0))
+            if (_declaredExchanges.TryAdd(message.Topic, DeclaredExchangeMarker))
             {
                 await channel.ExchangeDeclareAsync(
                     exchange: message.Topic,
@@ -113,6 +116,7 @@ public sealed class RabbitMqTransport(
             }
             catch (OperationCanceledException) when (subscriptionCancellationToken.IsCancellationRequested)
             {
+                logger.LogDebug("Message processing canceled for subscription {SubscriptionName}.", $"{Name}_{topic}_{handler.Name}");
                 return;
             }
             catch
@@ -140,6 +144,7 @@ public sealed class RabbitMqTransport(
             }
             catch (OperationCanceledException) when (subscriptionCancellationToken.IsCancellationRequested)
             {
+                logger.LogDebug("Message acknowledgement canceled for subscription {SubscriptionName}.", $"{Name}_{topic}_{handler.Name}");
             }
         };
 
