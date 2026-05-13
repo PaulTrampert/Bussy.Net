@@ -192,16 +192,32 @@ public sealed class ServiceCollectionExtensionsTests
     }
 
     // ---------------------------------------------------------------------------
-    // AddBussyHandlers + AddBussy integration
+    // AddBussyHandlers + AddBussy integration — call order
     // ---------------------------------------------------------------------------
 
     [Test]
-    public void AddBussyHandlers_CombinedWithAddBussy_AutoSubscribesScannedHandlers()
+    public void AddBussyHandlers_BeforeAddBussy_AutoSubscribesScannedHandlers()
     {
         using var provider = BuildProvider(sc =>
         {
             sc.AddBussyHandlers(typeof(SimpleTestHandler).Assembly);
             sc.AddBussy();
+        });
+
+        var registry = provider.GetRequiredService<HandlerRegistry>();
+        var route = new MessageRoute(Topic: nameof(TestMessage), Broker: null);
+
+        Assert.That(registry.Handlers, Does.ContainKey(route));
+    }
+
+    [Test]
+    public void AddBussy_BeforeAddBussyHandlers_AutoSubscribesScannedHandlers()
+    {
+        // Handlers scanned after AddBussy is called — order must not matter.
+        using var provider = BuildProvider(sc =>
+        {
+            sc.AddBussy();
+            sc.AddBussyHandlers(typeof(SimpleTestHandler).Assembly);
         });
 
         var registry = provider.GetRequiredService<HandlerRegistry>();
