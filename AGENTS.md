@@ -54,7 +54,7 @@ The RabbitMQ end-to-end tests automatically spin up a RabbitMQ container using T
 - Target the SDK version pinned in `global.json`.
 - Use `sealed` for concrete classes that are not designed for inheritance.
 - Use `record` or `sealed record` for message types and value objects.
-- Handlers are registered as **scoped** services; transports and registries are **singletons**. Transports generally implement `IPublisher`, so `IPublisher` is often a singleton.
+- Handlers and `IPublisher` are registered as **scoped** services; transports (`ITransportSender`/`ITransportReceiver`) and registries are **singletons**.
 - Tests use **NUnit** with `[TestFixture]`/`[Test]`/`[SetUp]`/`[TearDown]` attributes.
 - Keep transport-specific code out of the core `Bussy.Net` library.
 
