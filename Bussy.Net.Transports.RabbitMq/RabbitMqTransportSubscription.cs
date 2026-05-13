@@ -1,7 +1,7 @@
 using Bussy.Net.Transport;
 using RabbitMQ.Client;
 
-namespace Bussy.Net.Transports.RabbitMQ;
+namespace Bussy.Net.Transports.RabbitMq;
 
 public sealed class RabbitMqTransportSubscription(string name, string consumerTag, IChannel channel) : ITransportSubscription
 {

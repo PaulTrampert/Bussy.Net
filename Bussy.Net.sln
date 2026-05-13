@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussy.Net.Test", "Bussy.Net
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussy.Net.Transports.InMemory", "Bussy.Net.Transports.InMemory\Bussy.Net.Transports.InMemory.csproj", "{E0021E9F-BD84-483F-990F-5D662E4DF74F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussy.Net.Transports.RabbitMQ", "Bussy.Net.Transports.RabbitMQ\Bussy.Net.Transports.RabbitMQ.csproj", "{9C1C3DBB-F0D3-4890-A085-DC8054991EFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussy.Net.Transports.RabbitMq", "Bussy.Net.Transports.RabbitMq\Bussy.Net.Transports.RabbitMq.csproj", "{9C1C3DBB-F0D3-4890-A085-DC8054991EFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

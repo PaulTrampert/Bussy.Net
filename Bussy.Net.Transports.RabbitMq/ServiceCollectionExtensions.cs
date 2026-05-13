@@ -1,7 +1,7 @@
 using Bussy.Net.Transport;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Bussy.Net.Transports.RabbitMQ;
+namespace Bussy.Net.Transports.RabbitMq;
 
 public static class ServiceCollectionExtensions
 {

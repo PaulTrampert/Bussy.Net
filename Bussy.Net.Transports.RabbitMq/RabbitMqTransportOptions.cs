@@ -1,4 +1,4 @@
-namespace Bussy.Net.Transports.RabbitMQ;
+namespace Bussy.Net.Transports.RabbitMq;
 
 public sealed class RabbitMqTransportOptions
 {

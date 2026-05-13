@@ -1,4 +1,4 @@
-using Bussy.Net.Transports.RabbitMQ;
+using Bussy.Net.Transports.RabbitMq;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,7 +6,7 @@ using RabbitMQ.Client;
 
 namespace Bussy.Net.Test.E2E;
 
-public class RabbitMQEndToEndTests : EndToEndTestFixture
+public class RabbitMqEndToEndTests : EndToEndTestFixture
 {
     private IContainer _rabbitMqContainer = null!;
     private IConnection? _cachedConnection;

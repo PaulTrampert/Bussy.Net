@@ -1,6 +1,6 @@
 using System.Text;
 using Bussy.Net.Transport;
-using Bussy.Net.Transports.RabbitMQ;
+using Bussy.Net.Transports.RabbitMq;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 

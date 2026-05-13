@@ -2,7 +2,7 @@ using Bussy.Net.Transport;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Bussy.Net.Transports.RabbitMQ;
+namespace Bussy.Net.Transports.RabbitMq;
 
 public sealed class RabbitMqTransport(
     RabbitMqTransportOptions options,
