@@ -1,4 +1,4 @@
-# Bussy.Net
+# Bussy.Net [![NuGet Version](https://img.shields.io/nuget/v/Bussy.Net.svg?style=flat-square)](https://www.nuget.org/packages/Bussy.Net)
 
 Bussy.Net is a lightweight .NET messaging abstraction for publishing messages and handling them through pluggable transports. It provides a simple `IPublisher` API, handler-based message processing, and transport integrations like in-memory and RabbitMQ.
 
