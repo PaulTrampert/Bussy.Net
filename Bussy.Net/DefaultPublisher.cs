@@ -71,7 +71,6 @@ internal sealed class DefaultPublisher : IPublisher
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(messages);
-        cancellationToken.ThrowIfCancellationRequested();
 
         var resolvedRoute = _routeResolver.Resolve<T>();
         var topic = ChooseTopic(topicOverride, resolvedRoute.Topic);
@@ -185,4 +184,3 @@ internal sealed class DefaultPublisher : IPublisher
         return lookup;
     }
 }
-
