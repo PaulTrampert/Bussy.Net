@@ -151,7 +151,7 @@ public sealed class DefaultPublisherTests
     }
 
     [Test]
-    public async Task PublishAsync_BatchWithCancellationToken_ForwardsTokenToTransport()
+    public async Task PublishManyAsync_BatchWithCancellationToken_ForwardsTokenToTransport()
     {
         using var cts = new CancellationTokenSource();
         await _subject.PublishManyAsync(new[] { CreateMessage(), CreateMessage() }, cts.Token);
