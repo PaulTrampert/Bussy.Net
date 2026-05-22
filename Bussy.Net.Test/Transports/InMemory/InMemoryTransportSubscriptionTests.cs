@@ -227,13 +227,14 @@ public sealed class InMemoryTransportSubscriptionTests
         });
     }
 
-    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
+    private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        using var cts = new CancellationTokenSource(timeout);
+        using var timeoutCts = new CancellationTokenSource(timeout);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
         while (!predicate())
         {
-            cts.Token.ThrowIfCancellationRequested();
-            await Task.Delay(10, cts.Token);
+            linkedCts.Token.ThrowIfCancellationRequested();
+            await Task.Delay(10, linkedCts.Token);
         }
     }
 

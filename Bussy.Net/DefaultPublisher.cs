@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Bussy.Net.Transport;
 
@@ -33,37 +34,41 @@ internal sealed class DefaultPublisher : IPublisher
         _serializer = serializer ?? new JsonMessageSerializer();
     }
 
-    public Task PublishAsync<T>(T message)
+    public Task PublishAsync<T>(T message, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(Single(message), topicOverride: null, brokerOverride: null);
+        return PublishCoreAsync(Single(message), topicOverride: null, brokerOverride: null, cancellationToken: cancellationToken);
     }
 
-    public Task PublishManyAsync<T>(IEnumerable<T> messages)
+    public Task PublishManyAsync<T>(IEnumerable<T> messages, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(messages, topicOverride: null, brokerOverride: null);
+        return PublishCoreAsync(messages, topicOverride: null, brokerOverride: null, cancellationToken: cancellationToken);
     }
 
-    public Task PublishAsync<T>(T message, string topic)
+    public Task PublishAsync<T>(T message, string topic, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(Single(message), topicOverride: topic, brokerOverride: null);
+        return PublishCoreAsync(Single(message), topicOverride: topic, brokerOverride: null, cancellationToken: cancellationToken);
     }
 
-    public Task PublishManyAsync<T>(IEnumerable<T> messages, string topic)
+    public Task PublishManyAsync<T>(IEnumerable<T> messages, string topic, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(messages, topicOverride: topic, brokerOverride: null);
+        return PublishCoreAsync(messages, topicOverride: topic, brokerOverride: null, cancellationToken: cancellationToken);
     }
 
-    public Task PublishAsync<T>(T message, string topic, string broker)
+    public Task PublishAsync<T>(T message, string topic, string broker, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(Single(message), topicOverride: topic, brokerOverride: broker);
+        return PublishCoreAsync(Single(message), topicOverride: topic, brokerOverride: broker, cancellationToken: cancellationToken);
     }
 
-    public Task PublishManyAsync<T>(IEnumerable<T> messages, string topic, string broker)
+    public Task PublishManyAsync<T>(IEnumerable<T> messages, string topic, string broker, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(messages, topicOverride: topic, brokerOverride: broker);
+        return PublishCoreAsync(messages, topicOverride: topic, brokerOverride: broker, cancellationToken: cancellationToken);
     }
 
-    private async Task PublishCoreAsync<T>(IEnumerable<T> messages, string? topicOverride, string? brokerOverride)
+    private async Task PublishCoreAsync<T>(
+        IEnumerable<T> messages,
+        string? topicOverride,
+        string? brokerOverride,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(messages);
 
@@ -92,11 +97,11 @@ internal sealed class DefaultPublisher : IPublisher
 
             if (outbound.Length == 1)
             {
-                await target.SendAsync(outbound[0]).ConfigureAwait(false);
+                await target.SendAsync(outbound[0], cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
-            await target.SendBatchAsync(outbound).ConfigureAwait(false);
+            await target.SendBatchAsync(outbound, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -179,5 +184,3 @@ internal sealed class DefaultPublisher : IPublisher
         return lookup;
     }
 }
-
-

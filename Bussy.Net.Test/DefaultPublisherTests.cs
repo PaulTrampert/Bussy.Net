@@ -76,6 +76,17 @@ public sealed class DefaultPublisherTests
     }
 
     [Test]
+    public async Task PublishAsync_WithCancellationToken_ForwardsTokenToTransport()
+    {
+        using var cts = new CancellationTokenSource();
+        await _subject.PublishAsync(CreateMessage(), cts.Token);
+
+        _sqsMock.Verify(t => t.SendAsync(
+            It.IsAny<OutboundMessage>(),
+            It.Is<CancellationToken>(token => token == cts.Token)), Times.Once);
+    }
+
+    [Test]
     public async Task PublishAsync_SingleMessage_UsesClassNameAsTopic()
     {
         await _subject.PublishAsync(CreateMessage());
@@ -137,6 +148,17 @@ public sealed class DefaultPublisherTests
         _rabbitMock.Verify(t => t.SendBatchAsync(
             It.Is<IReadOnlyCollection<OutboundMessage>>(b => b.Count == 3),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task PublishManyAsync_BatchWithCancellationToken_ForwardsTokenToTransport()
+    {
+        using var cts = new CancellationTokenSource();
+        await _subject.PublishManyAsync(new[] { CreateMessage(), CreateMessage() }, cts.Token);
+
+        _sqsMock.Verify(t => t.SendBatchAsync(
+            It.IsAny<IReadOnlyCollection<OutboundMessage>>(),
+            It.Is<CancellationToken>(token => token == cts.Token)), Times.Once);
     }
 
     // --- Topic override ---
