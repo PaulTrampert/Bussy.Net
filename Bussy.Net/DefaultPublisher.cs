@@ -61,7 +61,7 @@ internal sealed class DefaultPublisher : IPublisher
 
     public Task PublishManyAsync<T>(IEnumerable<T> messages, string topic, string broker, CancellationToken cancellationToken = default)
     {
-        return PublishCoreAsync(messages, topicOverride: topic, brokerOverride: broker, cancellationToken);
+        return PublishCoreAsync(messages, topicOverride: topic, brokerOverride: broker, cancellationToken: cancellationToken);
     }
 
     private async Task PublishCoreAsync<T>(
