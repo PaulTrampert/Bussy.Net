@@ -14,9 +14,9 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
     private IConnection? _cachedConnection;
     private static string RabbitMqConfigPath => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "rabbitmq.conf"));
 
-    protected override async Task StartExternalDependenciesAsync()
+    protected override async Task StartExternalDependenciesAsync(CancellationToken cancellationToken = default)
     {
-        await base.StartExternalDependenciesAsync();
+        await base.StartExternalDependenciesAsync(cancellationToken);
 
         _rabbitMqContainer = new ContainerBuilder("rabbitmq:3.13-management")
             .WithBindMount(RabbitMqConfigPath, "/etc/rabbitmq.conf")
@@ -27,8 +27,8 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
                 .UntilCommandIsCompleted("rabbitmq-diagnostics -q check_running"))
             .Build();
 
-        await _rabbitMqContainer.StartAsync();
-        await WaitForRabbitMqReadyAsync();
+        await _rabbitMqContainer.StartAsync(cancellationToken);
+        await WaitForRabbitMqReadyAsync(cancellationToken);
 
         // Pre-initialize the connection asynchronously since DI factories are synchronous.
         var factory = new ConnectionFactory
@@ -39,7 +39,7 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
             Password = "bussy",
             VirtualHost = "/",
         };
-        _cachedConnection = await factory.CreateConnectionAsync();
+        _cachedConnection = await factory.CreateConnectionAsync(cancellationToken: cancellationToken);
     }
 
     private async Task WaitForRabbitMqReadyAsync(CancellationToken cancellationToken = default)
@@ -84,7 +84,7 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
         throw new TimeoutException("RabbitMQ was not ready to accept AMQP operations within 30 seconds.", lastError);
     }
 
-    protected override async Task StopExternalDependenciesAsync()
+    protected override async Task StopExternalDependenciesAsync(CancellationToken cancellationToken = default)
     {
         if (_cachedConnection is not null)
         {
@@ -93,7 +93,7 @@ public class RabbitMqEndToEndTests : EndToEndTestFixture
 
         await _rabbitMqContainer.DisposeAsync();
 
-        await base.StopExternalDependenciesAsync();
+        await base.StopExternalDependenciesAsync(cancellationToken);
     }
 
     protected override void ConfigureServices(IServiceCollection services)

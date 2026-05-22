@@ -15,12 +15,12 @@ public abstract class EndToEndTestFixture
     
     protected static readonly ConcurrentBag<E2ETestMessage> HandledE2ETestMessages = new();
 
-    protected virtual Task StartExternalDependenciesAsync()
+    protected virtual Task StartExternalDependenciesAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
 
-    protected virtual Task StopExternalDependenciesAsync()
+    protected virtual Task StopExternalDependenciesAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }

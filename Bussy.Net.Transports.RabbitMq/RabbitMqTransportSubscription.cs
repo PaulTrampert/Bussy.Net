@@ -40,10 +40,10 @@ public sealed class RabbitMqTransportSubscription(
         return new ValueTask(DisposeCoreAsync());
     }
 
-    private async Task DisposeCoreAsync()
+    private async Task DisposeCoreAsync(CancellationToken cancellationToken = default)
     {
         lifetimeCancellation.Cancel();
-        await channel.BasicCancelAsync(consumerTag).ConfigureAwait(false);
+        await channel.BasicCancelAsync(consumerTag, cancellationToken: cancellationToken).ConfigureAwait(false);
         await channel.DisposeAsync().ConfigureAwait(false);
         lifetimeCancellation.Dispose();
     }
